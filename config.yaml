@@ -1,0 +1,5 @@
+# Book Sorting Tool — project configuration
+# Copy this file and adjust paths for your library.
+
+source_folder: ./input_test_data
+output_folder: ./output_test_data

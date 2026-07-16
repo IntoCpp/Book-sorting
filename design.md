@@ -8,11 +8,30 @@ The project requirements are defined in [requirements.md](./requirements.md).
 
 The project overview and intended workflow are described in [README.md](./README.md).
 
-The system should remain as independent as possible from any specific AI agent platform or framework.
+The AI runtime uses the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/). The OpenAI API key is loaded from a `.env` file (see [`.env.example`](./.env.example)).
 
-The initial implementation may use an AI agent platform such as PI. However, the core application design must not depend on platform-specific concepts wherever practical.
+Core domain logic (classification, copy planning, file operations) remains independent from the AI platform. The SDK is an implementation detail accessed through a defined application boundary.
 
-The AI runtime is considered an implementation detail.
+---
+
+## Configuration
+
+### Project YAML
+
+User-facing paths are configured in [`config.yaml`](./config.yaml):
+
+| Key | Description | Default (testing) |
+|-----|-------------|-------------------|
+| `source_folder` | Directory containing unsorted books | `./input_test_data` |
+| `output_folder` | Destination for the organized library | `./output_test_data` |
+
+The application loads this file at startup. Users copy and edit it for their own library paths.
+
+### Environment
+
+| Variable | Description |
+|----------|-------------|
+| `OPENAI_API_KEY` | API key for the OpenAI Agents SDK (stored in `.env`, not committed) |
 
 ---
 
@@ -35,7 +54,7 @@ AI-Assisted Research
       ↓
 Book Classification
       ↓
-Move Planning
+Copy Planning
       ↓
 Human Review
       ↓
@@ -52,11 +71,39 @@ The workflow should separate:
 * Planning.
 * File operations.
 
-The system must generate a move plan before modifying files.
+The system must generate a copy plan before modifying files.
 
 AI interaction should be isolated from the rest of the application as much as practical.
 
 External capabilities such as web search and file metadata extraction should be exposed through well-defined interfaces.
+
+---
+
+## Agent-Reusable Tools
+
+Functionality is implemented as discrete tools that an agent can call. This supports reuse within this project and in other agent-based projects.
+
+Examples of tool boundaries:
+
+| Tool | Responsibility |
+|------|----------------|
+| `scan_source` | Discover files in the configured source folder |
+| `extract_metadata` | Read filenames, tags, and `.nfo` descriptions |
+| `search_web` | Look up missing book information |
+| `classify_book` | Produce author, series, title, and confidence |
+| `generate_copy_plan` | Build destination paths without modifying files |
+| `execute_copy` | Apply an approved copy plan |
+| `write_report` | Summarize actions, warnings, and errors |
+
+### External Tools and MCP
+
+When an external tool exists for a capability — via MCP or another integration — the project uses that tool instead of building a custom implementation. Examples:
+
+* **File search / inspection** — use an MCP file-system or search tool when available.
+* **Web search** — use an MCP web-search tool when available.
+* **Report writing** — use an MCP or SDK report tool when available.
+
+Custom implementations are reserved for domain-specific logic (grouping, classification, copy planning) that has no suitable external tool.
 
 ---
 
@@ -80,18 +127,27 @@ Create the core project areas for:
 * AI interaction.
 * Research.
 * Classification.
-* Move planning.
+* Copy planning.
 * File execution.
 * Reporting.
 * Tests.
 
 The initial workflow should execute a minimal end-to-end path.
 
+Load `config.yaml` for source and output paths. Load `OPENAI_API_KEY` from `.env`.
+
 The AI platform must not be embedded into the domain model.
 
 ### Validation
 
 The application starts and executes the initial workflow successfully.
+
+### How to Test
+
+1. Copy `.env.example` to `.env` and set a valid `OPENAI_API_KEY`.
+2. Place at least one test file in `./input_test_data`.
+3. Run the application entry point.
+4. Confirm it reads `config.yaml`, discovers the test file, and completes without error.
 
 ---
 
@@ -103,7 +159,7 @@ Discover all relevant files in the source directory.
 
 ### Implementation
 
-Recursively scan the source directory.
+Recursively scan the source directory configured in `config.yaml`.
 
 Collect the information required to identify and process files.
 
@@ -112,6 +168,12 @@ The discovery stage must not modify the source directory.
 ### Validation
 
 The complete set of relevant files is discovered.
+
+### How to Test
+
+1. Add several files (e-books, audiobooks, and non-book files) to `./input_test_data`.
+2. Run the discovery stage in isolation.
+3. Confirm all relevant media files are found and non-media files are excluded.
 
 ---
 
@@ -139,6 +201,12 @@ AI should not be required for basic file grouping.
 
 Known multi-file books are grouped together correctly.
 
+### How to Test
+
+1. Place a multi-file audiobook (several `.mp3` or `.m4b` files) in a single subdirectory of `./input_test_data`.
+2. Run the grouping stage.
+3. Confirm all files in the directory are assigned to one book group.
+
 ---
 
 ## Step 4 - Metadata Extraction
@@ -155,6 +223,7 @@ Extract information from available sources, including:
 * Directory names.
 * Ebook metadata.
 * Audio metadata.
+* **`.nfo` files** — text files with the `.nfo` extension found alongside book files. These often contain an extensive description of the book or series (author, title, series name, plot summary). When a `.nfo` file is present in a book folder, its content is parsed and used as a primary metadata source. Web search is not required when `.nfo` data is sufficient.
 
 The result should represent partial information.
 
@@ -163,6 +232,13 @@ Missing information is expected.
 ### Validation
 
 Available metadata is extracted and associated with the correct book group.
+
+### How to Test
+
+1. Create a test folder in `./input_test_data` with a book file and a companion `.nfo` file containing author, series, and title.
+2. Run the metadata extraction stage.
+3. Confirm the `.nfo` content is parsed and attached to the book group.
+4. Confirm no web-search request is triggered for that group.
 
 ---
 
@@ -174,9 +250,11 @@ Complete missing or uncertain book information.
 
 ### Implementation
 
-Use an AI agent to analyze the information collected for a book group.
+Use an OpenAI Agents SDK agent to analyze the information collected for a book group.
 
-The agent may use external services, including web search, when additional information is required.
+The agent may use external services, including web search via MCP tools, when additional information is required.
+
+Skip web research when `.nfo` files or other local metadata already provide sufficient identification.
 
 The AI interaction should be performed through an abstraction that allows the underlying agent platform to be changed.
 
@@ -185,6 +263,7 @@ The AI should be able to use:
 * File names.
 * File lists.
 * Extracted metadata.
+* `.nfo` descriptions.
 * File content when appropriate.
 * External research.
 
@@ -193,6 +272,12 @@ The result must be structured data rather than free-form text.
 ### Validation
 
 Known books can be identified from incomplete or poor-quality input.
+
+### How to Test
+
+1. Place a poorly named book file (no `.nfo`) in `./input_test_data`.
+2. Run the research stage.
+3. Confirm the agent returns structured metadata (author, series, title) with a confidence score.
 
 ---
 
@@ -222,9 +307,14 @@ Low-confidence classifications must be explicitly identifiable.
 
 The same book information produces a consistent classification.
 
+### How to Test
+
+1. Feed a known book group (with complete metadata) into the classification stage twice.
+2. Confirm both runs produce identical author, series, order, and title.
+
 ---
 
-## Step 7 - Move Planning
+## Step 7 - Copy Planning
 
 ### Objective
 
@@ -232,9 +322,9 @@ Generate a complete plan describing the future library structure.
 
 ### Implementation
 
-Convert classifications into destination paths.
+Convert classifications into destination paths under the configured `output_folder`.
 
-The move plan must be created without modifying files.
+The Copy plan must be created without modifying files.
 
 The plan should identify:
 
@@ -244,11 +334,18 @@ The plan should identify:
 * Warnings.
 * Items requiring review.
 
-The move plan should be serializable so it can be inspected or persisted.
+The copy plan should be serializable so it can be inspected or persisted.
 
 ### Validation
 
-A complete move plan is generated without file operations.
+A complete copy plan is generated without file operations.
+
+### How to Test
+
+1. Run the copy-planning stage against a classified book group.
+2. Inspect the serialized plan.
+3. Confirm destination paths follow `Author/Series/NN - Title/` (or `Author/Standalone/Title/`).
+4. Confirm no files were created or moved in `./output_test_data`.
 
 ---
 
@@ -274,7 +371,13 @@ The user must be able to approve or reject the proposed operation.
 
 ### Validation
 
-The move plan can be reviewed before execution.
+The copy plan can be reviewed before execution.
+
+### How to Test
+
+1. Generate a copy plan that includes a low-confidence classification.
+2. Present the plan for review.
+3. Confirm the user can approve or reject individual items.
 
 ---
 
@@ -282,13 +385,13 @@ The move plan can be reviewed before execution.
 
 ### Objective
 
-Apply an approved move plan.
+Apply an approved copy plan.
 
 ### Implementation
 
-Create missing destination directories.
+Create missing destination directories under `output_folder`.
 
-Move the files according to the approved plan.
+Copy the files according to the approved plan.
 
 The execution layer must not perform AI reasoning.
 
@@ -296,7 +399,14 @@ Failures must be reported without hiding partially completed operations.
 
 ### Validation
 
-Approved moves are applied correctly.
+Approved copies are applied correctly.
+
+### How to Test
+
+1. Approve a copy plan for one book group.
+2. Run the execution stage.
+3. Confirm files appear under `./output_test_data` in the expected structure.
+4. Confirm source files in `./input_test_data` are unchanged.
 
 ---
 
@@ -328,6 +438,12 @@ A subsequent execution does not process the same file again.
 
 A file that failed to be processed remains eligible for a future execution.
 
+### How to Test
+
+1. Process and copy a file successfully.
+2. Run the full workflow again on the same source folder.
+3. Confirm the previously copied file is skipped.
+4. Confirm a file that failed to copy on the first run is still eligible.
 
 ---
 
@@ -343,16 +459,22 @@ Generate a report containing:
 
 * Books processed.
 * Books skipped.
-* Files moved.
+* Files copied.
 * Warnings.
 * Errors.
 * Low-confidence classifications.
 
-Reporting should be independent from the AI platform.
+Reporting should be independent from the AI platform. Use an external report tool via MCP when one is available.
 
 ### Validation
 
 The report accurately describes the operation.
+
+### How to Test
+
+1. Run a full workflow that processes, skips, and warns on at least one item each.
+2. Generate the report.
+3. Confirm all three categories appear in the output.
 
 ---
 
@@ -364,19 +486,19 @@ Keep the application independent from a specific AI platform.
 
 ### Implementation
 
-AI agent execution must be accessed through a defined application boundary.
+AI agent execution is provided by the OpenAI Agents SDK, accessed through a defined application boundary.
 
 External capabilities such as web search, file inspection, and metadata extraction should be exposed through replaceable interfaces.
 
+Prefer MCP tools for external capabilities (web search, file search, report writing) when they are available.
+
 Platform-specific implementation must remain localized.
 
-The system should be able to replace the initial AI platform without requiring changes to the core domain and file organization logic.
-
-The use of MCP services may be considered for external capabilities where appropriate.
+The system should be able to replace the OpenAI Agents SDK without requiring changes to the core domain and file organization logic.
 
 ### Validation
 
-The core workflow can be tested without requiring a specific AI platform.
+The core workflow can be tested without requiring a live AI call (mock the agent boundary).
 
 ---
 
@@ -398,3 +520,34 @@ Improve reliability and usability after the core workflow is stable.
 * Parallel processing.
 
 Enhancements should be added without changing the core workflow responsibilities.
+
+---
+
+## Testing
+
+The project is developed incrementally. Each step above includes **Validation** criteria and a **How to Test** procedure.
+
+### General Setup
+
+1. Ensure Python dependencies are installed (see project `requirements.txt` or `pyproject.toml` when available).
+2. Copy [`.env.example`](./.env.example) to `.env` and set `OPENAI_API_KEY`.
+3. Use the default test folders from [`config.yaml`](./config.yaml):
+   * Source: `./input_test_data`
+   * Output: `./output_test_data`
+
+### Running Tests
+
+As implementation progresses, each workflow stage should be runnable in isolation for development and debugging. The **How to Test** subsections in each step above are the authoritative test procedures.
+
+Update this section and the per-step instructions whenever a new stage is implemented or its interface changes.
+
+### End-to-End Smoke Test
+
+Once all stages are implemented:
+
+1. Place a small mixed collection (one e-book, one multi-file audiobook, one folder with a `.nfo` file) in `./input_test_data`.
+2. Run the full workflow.
+3. Review the copy plan, approve it, and execute.
+4. Confirm the organized library appears under `./output_test_data`.
+5. Run the workflow again and confirm previously sorted files are skipped.
+6. Read the generated report and confirm it matches the actions taken.
