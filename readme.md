@@ -37,12 +37,12 @@ Author/
 
 ## Workflow
 
-The application is implemented as a LangGraph workflow.
+The application is an AI-assisted, staged workflow for organizing ebook and audiobook files.
 
 ```text
 Scan source folder
         ↓
-Exclude files previously sorted (saved changes from last run)
+Exclude files previously sorted (read processing history)
         ↓
 Group related files
         ↓
@@ -52,16 +52,18 @@ Research missing information
         ↓
 Classify books
         ↓
-Generate move plan
+Generate copy plan
         ↓
 Human review (optional)
         ↓
 Execute copy
         ↓
-Save changes for next run
+Save changes for next run (update processing history)
         ↓
 Generate report
 ```
+
+Processing history is **read early** (exclude previously sorted files right after scanning) and **written late** (save records after successful copy). See [design.md](./design.md) for details.
 
 Each stage is independent and can be tested separately.
 
@@ -82,6 +84,19 @@ Book identification may use:
 Where it makes sense, functionality is implemented as discrete, reusable tools (for example: scan files, extract metadata, search the web, write a report). These tools can be invoked by the workflow agent in this project or reused by agents in other projects.
 
 When an external capability is available — via MCP or another integration — the project uses that tool rather than reimplementing it.
+
+
+## Python Environment and Execution
+
+* Python dependencies and the project environment are managed using uv.
+* The project must be executed using uv run.
+* Tests must be run using uv run.
+* Do not introduce pip, venv, or alternative environment-management workflows unless explicitly requested.
+
+For example:
+
+`uv run pytest`
+
 
 ## Testing
 

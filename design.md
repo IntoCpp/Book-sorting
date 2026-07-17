@@ -46,6 +46,8 @@ The main workflow is:
 ```text
 File Discovery
       ↓
+Exclude Previously Processed
+      ↓
 File Grouping
       ↓
 Metadata Extraction
@@ -60,8 +62,17 @@ Human Review
       ↓
 File Execution
       ↓
+Update Processing History
+      ↓
 Reporting
 ```
+
+Processing history has two touch points in the pipeline:
+
+* **Exclude Previously Processed** — runs early, immediately after file discovery. Reads the persistent processing history and removes already-sorted files from the working set before grouping and classification begin.
+* **Update Processing History** — runs late, after file execution succeeds. Writes new records for successfully copied files. This corresponds to [Step 10](#step-10---processing-history) in the implementation plan.
+
+On a subsequent run, the early exclusion stage prevents duplicate work even though the history was saved at the end of the previous run.
 
 The workflow should separate:
 
@@ -104,6 +115,19 @@ When an external tool exists for a capability — via MCP or another integration
 * **Report writing** — use an MCP or SDK report tool when available.
 
 Custom implementations are reserved for domain-specific logic (grouping, classification, copy planning) that has no suitable external tool.
+
+---
+
+## Testing Requirements
+
+* The project uses PyTest as its test framework.
+* Tests must be executable through uv run pytest.
+* New functionality must include appropriate automated tests.
+* Tests must cover the deterministic/non-AI parts of the application.
+* Tests should not require live external AI services unless explicitly designated as integration tests.
+* The test suite must be runnable locally without manual setup beyond the documented uv environment.
+
+The implementation plan must include tests as part of each feature implementation, not as a final project phase.
 
 ---
 
@@ -424,7 +448,12 @@ For each successfully processed source file, record enough information to identi
 
 The processing history must be updated only after the corresponding file operation has completed successfully.
 
-During file discovery or an equivalent early workflow stage, previously processed files should be excluded from normal processing.
+**Read vs write timing:** History is consulted early and updated late:
+
+* **Read (exclude)** — During file discovery or immediately afterward, load the processing history and exclude previously processed files from the working set. This is the *Exclude Previously Processed* stage in the high-level workflow.
+* **Write (save)** — After file execution completes successfully, append records for the copied files. This is the *Update Processing History* stage in the high-level workflow.
+
+These are two stages in the pipeline, not a single step that runs only at the end.
 
 The tracking mechanism should be isolated from the file execution logic.
 
@@ -529,13 +558,25 @@ The project is developed incrementally. Each step above includes **Validation** 
 
 ### General Setup
 
-1. Ensure Python dependencies are installed (see project `requirements.txt` or `pyproject.toml` when available).
+1. Install dependencies with uv: `uv sync`
 2. Copy [`.env.example`](./.env.example) to `.env` and set `OPENAI_API_KEY`.
 3. Use the default test folders from [`config.yaml`](./config.yaml):
    * Source: `./input_test_data`
    * Output: `./output_test_data`
 
 ### Running Tests
+
+Run the full test suite:
+
+```text
+uv run pytest
+```
+
+Run tests for a specific module:
+
+```text
+uv run pytest tests/test_config.py
+```
 
 As implementation progresses, each workflow stage should be runnable in isolation for development and debugging. The **How to Test** subsections in each step above are the authoritative test procedures.
 
@@ -546,7 +587,7 @@ Update this section and the per-step instructions whenever a new stage is implem
 Once all stages are implemented:
 
 1. Place a small mixed collection (one e-book, one multi-file audiobook, one folder with a `.nfo` file) in `./input_test_data`.
-2. Run the full workflow.
+2. Run the full workflow: `uv run book-sort`
 3. Review the copy plan, approve it, and execute.
 4. Confirm the organized library appears under `./output_test_data`.
 5. Run the workflow again and confirm previously sorted files are skipped.

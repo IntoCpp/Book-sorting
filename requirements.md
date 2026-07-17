@@ -96,7 +96,7 @@ Low-confidence classifications shall be identifiable.
 
 ## File Handling Requirements
 
-The application shall move files from the source directory to a target directory.
+The application shall copy files from the source directory to a target directory.
 
 The resulting directory structure shall contain subdirectories organized by:
 
@@ -121,6 +121,8 @@ The processing record shall allow the application to identify files that have al
 
 On subsequent executions, previously processed files shall be excluded from normal processing unless explicitly requested otherwise.
 
+Exclusion shall occur early in the pipeline (after file discovery). History shall be updated late in the pipeline (after successful file copy).
+
 The processing history shall be updated only after the corresponding file operation has completed successfully.
 
 The processing history shall remain available between application executions.
@@ -133,9 +135,9 @@ The application shall avoid uncertain classifications.
 
 Low-confidence results shall be reviewable.
 
-The user shall have the option to approve changes before files are moved.
+The user shall have the option to approve changes before files are copied.
 
-The system shall be capable of generating a move plan before executing changes.
+The system shall be capable of generating a copy plan before executing changes.
 
 The application shall generate reports describing the performed actions.
 
@@ -144,8 +146,6 @@ The application shall generate reports describing the performed actions.
 ## Development Requirements
 
 The project shall be implemented in Python.
-
-The project shall use LangGraph.
 
 The project shall be maintained in GitHub.
 
