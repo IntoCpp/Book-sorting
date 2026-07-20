@@ -33,6 +33,7 @@ class BookGroup:
     files: list[DiscoveredFile] = field(default_factory=list)
     root_path: Path | None = None
     metadata: ExtractedMetadata | None = None
+    research: Classification | None = None
 
 
 @dataclass
@@ -42,6 +43,8 @@ class Classification:
     series_order: int | None = None
     title: str | None = None
     confidence: float | None = None
+    research_notes: str | None = None
+    research_skipped: bool = False
 
 
 @dataclass

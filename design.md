@@ -123,6 +123,7 @@ Custom implementations are reserved for domain-specific logic (grouping, classif
 * The project uses PyTest as its test framework.
 * Tests must be executable through uv run pytest.
 * Use the `show` fixture in tests to print useful context (paths, extracted fields) when running `uv run pytest -v`.
+* Mark live AI tests with `@pytest.mark.integration`. Default test runs exclude them; use `uv run pytest -v -m integration` for AI research against `./input_test_data`.
 * New functionality must include appropriate automated tests.
 * Tests must cover the deterministic/non-AI parts of the application.
 * Tests should not require live external AI services unless explicitly designated as integration tests.
