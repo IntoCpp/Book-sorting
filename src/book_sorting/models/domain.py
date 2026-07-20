@@ -34,6 +34,7 @@ class BookGroup:
     root_path: Path | None = None
     metadata: ExtractedMetadata | None = None
     research: Classification | None = None
+    classification: Classification | None = None
 
 
 @dataclass
@@ -45,6 +46,7 @@ class Classification:
     confidence: float | None = None
     research_notes: str | None = None
     research_skipped: bool = False
+    low_confidence: bool = False
 
 
 @dataclass
