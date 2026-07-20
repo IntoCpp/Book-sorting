@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
+
+
+class MediaKind(str, Enum):
+    EBOOK = "ebook"
+    AUDIOBOOK = "audiobook"
 
 
 @dataclass(frozen=True)
 class DiscoveredFile:
     path: Path
+    media_kind: MediaKind
 
 
 @dataclass

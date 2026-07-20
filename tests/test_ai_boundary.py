@@ -2,6 +2,7 @@ import ast
 from pathlib import Path
 
 from book_sorting.ai.boundary import StubAgentBoundary
+from book_sorting.discovery.media_types import MediaKind
 from book_sorting.models.domain import BookGroup, DiscoveredFile
 
 
@@ -9,7 +10,9 @@ def test_stub_agent_boundary_returns_classification() -> None:
     boundary = StubAgentBoundary()
     group = BookGroup(
         group_id="g0",
-        files=[DiscoveredFile(path=Path("sample.epub"))],
+        files=[
+            DiscoveredFile(path=Path("sample.epub"), media_kind=MediaKind.EBOOK),
+        ],
     )
     result = boundary.research_book(group)
     assert result.author is None
