@@ -3,6 +3,7 @@ from book_sorting.models.domain import (
     Classification,
     CopyPlan,
     DiscoveredFile,
+    ExtractedMetadata,
     MediaKind,
     RunReport,
 )
@@ -13,6 +14,7 @@ __all__ = [
     "Classification",
     "CopyPlan",
     "DiscoveredFile",
+    "ExtractedMetadata",
     "MediaKind",
     "RunReport",
     "WorkflowState",

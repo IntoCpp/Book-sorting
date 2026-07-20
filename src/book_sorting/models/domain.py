@@ -17,10 +17,22 @@ class DiscoveredFile:
 
 
 @dataclass
+class ExtractedMetadata:
+    title: str | None = None
+    author: str | None = None
+    series: str | None = None
+    series_index: str | None = None
+    description: str | None = None
+    nfo_present: bool = False
+    field_sources: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class BookGroup:
     group_id: str
     files: list[DiscoveredFile] = field(default_factory=list)
     root_path: Path | None = None
+    metadata: ExtractedMetadata | None = None
 
 
 @dataclass

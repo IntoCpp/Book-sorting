@@ -12,7 +12,10 @@ def _discovered(path: Path, kind: MediaKind) -> DiscoveredFile:
     return DiscoveredFile(path=path.resolve(), media_kind=kind)
 
 
-def test_multi_file_audiobook_in_subdirectory_is_one_group(tmp_path: Path) -> None:
+def test_multi_file_audiobook_in_subdirectory_is_one_group(
+    tmp_path: Path,
+    show,
+) -> None:
     source = tmp_path / "source"
     book_dir = source / "Some Audiobook"
     book_dir.mkdir(parents=True)
@@ -25,6 +28,10 @@ def test_multi_file_audiobook_in_subdirectory_is_one_group(tmp_path: Path) -> No
         _discovered(book_dir / "03.mp3", MediaKind.AUDIOBOOK),
     ]
     groups = build_book_groups(files, source)
+
+    show(f"folder: {book_dir.name}")
+    show(f"group_id: {groups[0].group_id}")
+    show(f"files grouped: {[f.path.name for f in groups[0].files]}")
 
     assert len(groups) == 1
     assert len(groups[0].files) == 3
