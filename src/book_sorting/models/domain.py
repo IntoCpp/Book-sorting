@@ -20,6 +20,7 @@ class DiscoveredFile:
 class BookGroup:
     group_id: str
     files: list[DiscoveredFile] = field(default_factory=list)
+    root_path: Path | None = None
 
 
 @dataclass
