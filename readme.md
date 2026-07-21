@@ -117,4 +117,5 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-07-21** — Run reports are appended to `run-report.txt` in the output folder to keep a history of each run.
 - **2026-07-21** — Windows file copies use extended-length paths when destinations exceed the usual `MAX_PATH` limit.

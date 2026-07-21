@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from pathlib import Path
 
 from book_sorting.config import AppConfig
@@ -9,6 +10,7 @@ from book_sorting.models.domain import (
     CopyPlanEntry,
 )
 from book_sorting.models.state import WorkflowState
+from book_sorting.reporting.persist import RUN_REPORT_FILENAME, append_report_to_file
 from book_sorting.reporting.summary import build_run_report
 from book_sorting.reporting.report import write_report
 
@@ -142,3 +144,41 @@ def test_write_report_stage_attaches_summary(tmp_path: Path) -> None:
     write_report(state)
     assert state.report is not None
     assert "Book Sorting Run Summary" in state.report.message
+
+
+def test_write_report_appends_to_output_file(tmp_path: Path) -> None:
+    output = tmp_path / "out"
+    state = WorkflowState(
+        config=AppConfig(
+            source_folder=tmp_path / "in",
+            output_folder=output,
+            config_path=tmp_path / "config.yaml",
+        ),
+    )
+
+    write_report(state)
+
+    report_path = output / RUN_REPORT_FILENAME
+    assert report_path.is_file()
+    first_text = report_path.read_text(encoding="utf-8")
+    assert state.report is not None
+    assert state.report.message in first_text
+    assert "Run at" in first_text
+
+    write_report(state)
+    second_text = report_path.read_text(encoding="utf-8")
+    assert second_text.count("Book Sorting Run Summary") == 2
+    assert len(second_text) > len(first_text)
+
+
+def test_append_report_to_file_uses_timestamp_separator(tmp_path: Path) -> None:
+    output = tmp_path / "out"
+    run_at = datetime(2026, 7, 21, 16, 9, tzinfo=UTC)
+
+    append_report_to_file(output, "Run summary", run_at=run_at)
+    append_report_to_file(output, "Second run", run_at=run_at)
+
+    text = (output / RUN_REPORT_FILENAME).read_text(encoding="utf-8")
+    assert text.count("Run at 2026-07-21 16:09:00 UTC") == 2
+    assert "Run summary" in text
+    assert text.index("Run summary") < text.index("Second run")
