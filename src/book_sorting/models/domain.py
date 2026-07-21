@@ -50,8 +50,19 @@ class Classification:
 
 
 @dataclass
+class CopyPlanEntry:
+    source: Path
+    destination: Path
+    group_id: str
+    requires_review: bool = False
+
+
+@dataclass
 class CopyPlan:
-    entries: list[tuple[Path, Path]] = field(default_factory=list)
+    entries: list[CopyPlanEntry] = field(default_factory=list)
+    conflicts: list[str] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
+    review_group_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
