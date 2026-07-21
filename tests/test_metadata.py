@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 from book_sorting.discovery.media_types import MediaKind
 from book_sorting.grouping.rules import build_book_groups
 from book_sorting.metadata.extract import extract_metadata
@@ -73,11 +73,7 @@ def test_extract_metadata_stage_attaches_to_groups(tmp_path: Path, show) -> None
         _discovered(book_dir / "02.mp3", MediaKind.AUDIOBOOK),
     ]
     groups = build_book_groups(discovered, source)
-    config = AppConfig(
-        source_folder=source,
-        output_folder=tmp_path / "output",
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, tmp_path / "output", tmp_path / "config.yaml")
     state = WorkflowState(config=config, discovered_files=discovered, book_groups=groups)
 
     result = extract_metadata(state)

@@ -8,13 +8,14 @@ from book_sorting.review.prompt import reset_prompt_yes_no, set_prompt_yes_no
 from book_sorting.review.review import review_plan
 
 
-def _sample_state(*, human_review: bool) -> WorkflowState:
-    from book_sorting.config import AppConfig
+from conftest import make_app_config
 
-    config = AppConfig(
-        source_folder=Path("C:/src"),
-        output_folder=Path("C:/out"),
-        config_path=Path("C:/config.yaml"),
+
+def _sample_state(*, human_review: bool) -> WorkflowState:
+    config = make_app_config(
+        Path("C:/src"),
+        Path("C:/out"),
+        Path("C:/config.yaml"),
     )
     group = BookGroup(
         group_id="g-low",

@@ -18,16 +18,20 @@ Core domain logic (classification, copy planning, file operations) remains indep
 
 ### Project YAML
 
-User-facing paths are configured in [`config.yaml`](./config.yaml):
+User-facing paths are configured in [`config.yaml`](./config.yaml). Use `--test` on the command line for test mode; omit it for production.
 
-| Key | Description | Default (testing) |
-|-----|-------------|-------------------|
-| `source_folder` | Directory containing unsorted books | `./input_test_data` |
-| `output_folder` | Destination for the organized library | `./output_test_data` |
+| Key | Description |
+|-----|-------------|
+| `source_folder_test` | Source directory when running with `--test` |
+| `output_folder_test` | Output directory when running with `--test` |
+| `source_folder_prod` | Source directory in production mode |
+| `output_folder_prod` | Output directory in production mode |
+| `processing_history_test` | Processing history filename for test mode |
+| `processing_history_prod` | Processing history filename for production mode |
 
 The application loads this file at startup. Users copy and edit it for their own library paths.
 
-Processing history is persisted in `processing_history.json` in the same directory as `config.yaml` (outside the source folder).
+Processing history files are stored next to `config.yaml` (outside the source folder). The active filename depends on test or production mode.
 
 ### Environment
 

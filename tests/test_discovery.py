@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 from book_sorting.discovery.media_types import classify_media_path
 from book_sorting.models.domain import MediaKind
 from book_sorting.discovery.scan import discover_source_files
@@ -10,11 +10,7 @@ from book_sorting.models.state import WorkflowState
 def _state_with_source(tmp_path: Path, source: Path) -> WorkflowState:
     output = tmp_path / "output"
     output.mkdir(exist_ok=True)
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     return WorkflowState(config=config)
 
 

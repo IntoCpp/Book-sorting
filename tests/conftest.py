@@ -1,6 +1,31 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
+
+from book_sorting.config import AppConfig
+
+
+def make_app_config(
+    source_folder: Path,
+    output_folder: Path,
+    config_path: Path,
+    *,
+    test_mode: bool = True,
+    processing_history_path: Path | None = None,
+) -> AppConfig:
+    history_path = processing_history_path or (
+        config_path.parent
+        / ("processing_history_test.json" if test_mode else "processing_history_prod.json")
+    )
+    return AppConfig(
+        source_folder=source_folder,
+        output_folder=output_folder,
+        processing_history_path=history_path,
+        config_path=config_path,
+        test_mode=test_mode,
+    )
 
 
 @pytest.fixture

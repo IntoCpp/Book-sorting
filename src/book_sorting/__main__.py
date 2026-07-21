@@ -31,6 +31,11 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="Pause for human approval before executing the copy plan",
     )
+    parser.add_argument(
+        "--test",
+        action="store_true",
+        help="Use test folders and processing history from config.yaml",
+    )
     args = parser.parse_args(argv)
 
     load_dotenv_file()
@@ -39,11 +44,13 @@ def main(argv: list[str] | None = None) -> None:
         logging.warning("OPENAI_API_KEY is not set; AI stages are stubbed in Step 1")
 
     try:
-        config = load_config(args.config)
+        config = load_config(args.config, test_mode=args.test)
     except ConfigError as exc:
         logging.error("%s", exc)
         sys.exit(1)
 
+    mode_label = "test" if config.test_mode else "production"
+    logging.info("Running in %s mode", mode_label)
     logging.info("Loaded config from %s", config.config_path)
     logging.info("Source folder: %s", config.source_folder)
     logging.info("Output folder: %s", config.output_folder)

@@ -65,13 +65,9 @@ def test_missing_author_is_low_confidence(show) -> None:
 
 
 def test_classify_stage_updates_state(tmp_path: Path) -> None:
-    from book_sorting.config import AppConfig
+    from conftest import make_app_config
 
-    config = AppConfig(
-        source_folder=tmp_path,
-        output_folder=tmp_path,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(tmp_path, tmp_path, tmp_path / "config.yaml")
     state = WorkflowState(
         config=config,
         book_groups=[

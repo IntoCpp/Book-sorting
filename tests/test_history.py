@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 from book_sorting.discovery.scan import discover_source_files
 from book_sorting.execution.execute import execute_copy
 from book_sorting.history.exclude import exclude_processed
@@ -24,11 +24,7 @@ def _state(tmp_path: Path) -> WorkflowState:
     source.mkdir()
     output.mkdir()
     return WorkflowState(
-        config=AppConfig(
-            source_folder=source,
-            output_folder=output,
-            config_path=tmp_path / "config.yaml",
-        ),
+        config=make_app_config(source, output, tmp_path / "config.yaml"),
     )
 
 
@@ -113,11 +109,7 @@ def test_second_workflow_run_skips_processed_file(tmp_path: Path) -> None:
     output.mkdir()
     (source / "book.epub").write_text("x", encoding="utf-8")
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
 
     first = WorkflowRunner().run(WorkflowState(config=config))
     assert any(result.copied for result in first.execution_results)

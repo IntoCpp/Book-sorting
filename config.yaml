@@ -1,5 +1,9 @@
 # Book Sorting Tool — project configuration
 # Copy this file and adjust paths for your library.
 
-source_folder: ./input_test_data
-output_folder: ./output_test_data
+source_folder_test: ./input_test_data
+output_folder_test: ./output_test_data
+source_folder_prod: D:\Users\ERIC\Documents\VM_shared_download\torrents
+output_folder_prod: ./output_test_data_prod
+processing_history_test: processing_history_test.json
+processing_history_prod: processing_history_prod.json

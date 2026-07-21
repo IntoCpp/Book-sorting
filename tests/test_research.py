@@ -115,9 +115,9 @@ def test_research_stage_attaches_results(tmp_path: Path) -> None:
     output.mkdir()
     (source / "book.epub").write_text("x", encoding="utf-8")
 
-    from book_sorting.config import AppConfig
+    from conftest import make_app_config
 
-    config = AppConfig(source_folder=source, output_folder=output, config_path=tmp_path / "c.yaml")
+    config = make_app_config(source, output, tmp_path / "c.yaml")
     state = WorkflowState(config=config)
     state = discover_source_files(state)
     state = group_files(state)
@@ -141,12 +141,12 @@ def test_ai_research_on_input_test_data_book(show) -> None:
     if source is None:
         pytest.skip("input_test_data (or input_data_tests) folder not found")
 
-    from book_sorting.config import AppConfig
+    from conftest import make_app_config
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=source.parent / "output_test_data",
-        config_path=source.parent / "config.yaml",
+    config = make_app_config(
+        source,
+        source.parent / "output_test_data",
+        source.parent / "config.yaml",
     )
     state = WorkflowState(config=config)
     state = discover_source_files(state)
@@ -203,12 +203,12 @@ def test_ai_research_poorly_named_file_in_input_test_data(show) -> None:
     if not obscure_file.is_file():
         obscure_file.write_bytes(b"\x00" * 128)
 
-    from book_sorting.config import AppConfig
+    from conftest import make_app_config
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=source.parent / "output_test_data",
-        config_path=source.parent / "config.yaml",
+    config = make_app_config(
+        source,
+        source.parent / "output_test_data",
+        source.parent / "config.yaml",
     )
     state = WorkflowState(config=config)
     state = discover_source_files(state)

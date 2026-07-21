@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 from book_sorting.discovery.media_types import MediaKind
 from book_sorting.models.state import WorkflowState
 from book_sorting.workflow.runner import WorkflowRunner
@@ -14,11 +14,7 @@ def test_workflow_runner_discovers_files(tmp_path: Path) -> None:
     book_file = source / "sample.epub"
     book_file.write_text("test", encoding="utf-8")
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     state = WorkflowState(config=config)
     final = WorkflowRunner().run(state)
 
@@ -39,11 +35,7 @@ def test_workflow_runner_does_not_modify_source(tmp_path: Path) -> None:
     book_file.write_text("x", encoding="utf-8")
     before = book_file.read_bytes()
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     WorkflowRunner().run(WorkflowState(config=config))
 
     assert book_file.read_bytes() == before
@@ -56,11 +48,7 @@ def test_workflow_runner_copies_approved_plan_to_output(tmp_path: Path) -> None:
     output.mkdir()
     (source / "book.epub").write_text("x", encoding="utf-8")
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     final = WorkflowRunner().run(WorkflowState(config=config))
 
     assert final.execution_results
@@ -80,11 +68,7 @@ def test_workflow_runner_ignores_non_media_in_source(tmp_path: Path) -> None:
     (source / "book.epub").write_text("x", encoding="utf-8")
     (source / "cover.jpg").write_bytes(b"\xff\xd8\xff")
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     final = WorkflowRunner().run(WorkflowState(config=config))
 
     assert len(final.discovered_files) == 1

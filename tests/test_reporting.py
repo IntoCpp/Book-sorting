@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 from book_sorting.models.domain import (
     BookGroup,
     Classification,
@@ -17,10 +17,10 @@ from book_sorting.reporting.report import write_report
 
 def test_report_includes_processed_skipped_and_warnings(show) -> None:
     state = WorkflowState(
-        config=AppConfig(
-            source_folder=Path("C:/in"),
-            output_folder=Path("C:/out"),
-            config_path=Path("C:/project/config.yaml"),
+        config=make_app_config(
+            Path("C:/in"),
+            Path("C:/out"),
+            Path("C:/project/config.yaml"),
         ),
         history_excluded_count=1,
         book_groups=[
@@ -94,10 +94,10 @@ def test_report_includes_processed_skipped_and_warnings(show) -> None:
 
 def test_report_includes_execution_errors() -> None:
     state = WorkflowState(
-        config=AppConfig(
-            source_folder=Path("C:/in"),
-            output_folder=Path("C:/out"),
-            config_path=Path("C:/project/config.yaml"),
+        config=make_app_config(
+            Path("C:/in"),
+            Path("C:/out"),
+            Path("C:/project/config.yaml"),
         ),
         book_groups=[
             BookGroup(
@@ -135,10 +135,10 @@ def test_report_includes_execution_errors() -> None:
 
 def test_write_report_stage_attaches_summary(tmp_path: Path) -> None:
     state = WorkflowState(
-        config=AppConfig(
-            source_folder=tmp_path / "in",
-            output_folder=tmp_path / "out",
-            config_path=tmp_path / "config.yaml",
+        config=make_app_config(
+            tmp_path / "in",
+            tmp_path / "out",
+            tmp_path / "config.yaml",
         ),
     )
     write_report(state)
@@ -149,10 +149,10 @@ def test_write_report_stage_attaches_summary(tmp_path: Path) -> None:
 def test_write_report_appends_to_output_file(tmp_path: Path) -> None:
     output = tmp_path / "out"
     state = WorkflowState(
-        config=AppConfig(
-            source_folder=tmp_path / "in",
-            output_folder=output,
-            config_path=tmp_path / "config.yaml",
+        config=make_app_config(
+            tmp_path / "in",
+            output,
+            tmp_path / "config.yaml",
         ),
     )
 

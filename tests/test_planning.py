@@ -136,13 +136,9 @@ def test_generate_copy_plan_does_not_create_output_files(tmp_path: Path) -> None
     source.mkdir()
     (source / "book.epub").write_text("x", encoding="utf-8")
 
-    from book_sorting.config import AppConfig
+    from conftest import make_app_config
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     state = WorkflowState(
         config=config,
         book_groups=[

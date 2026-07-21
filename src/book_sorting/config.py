@@ -12,7 +12,9 @@ import os
 class AppConfig:
     source_folder: Path
     output_folder: Path
+    processing_history_path: Path
     config_path: Path
+    test_mode: bool = False
 
 
 class ConfigError(Exception):
@@ -26,7 +28,15 @@ def _resolve_path(base_dir: Path, value: str) -> Path:
     return (base_dir / path).resolve()
 
 
-def load_config(config_path: Path | None = None) -> AppConfig:
+def _required_config_value(data: dict, *, test_mode: bool, test_key: str, prod_key: str) -> str:
+    key = test_key if test_mode else prod_key
+    value = data.get(key)
+    if not value:
+        raise ConfigError(f"config.yaml must define {key}")
+    return str(value)
+
+
+def load_config(config_path: Path | None = None, *, test_mode: bool = False) -> AppConfig:
     path = (config_path or Path("config.yaml")).resolve()
     if not path.is_file():
         raise ConfigError(f"Config file not found: {path}")
@@ -34,14 +44,29 @@ def load_config(config_path: Path | None = None) -> AppConfig:
     with path.open(encoding="utf-8") as handle:
         data = yaml.safe_load(handle) or {}
 
-    source = data.get("source_folder")
-    output = data.get("output_folder")
-    if not source or not output:
-        raise ConfigError("config.yaml must define source_folder and output_folder")
+    source = _required_config_value(
+        data,
+        test_mode=test_mode,
+        test_key="source_folder_test",
+        prod_key="source_folder_prod",
+    )
+    output = _required_config_value(
+        data,
+        test_mode=test_mode,
+        test_key="output_folder_test",
+        prod_key="output_folder_prod",
+    )
+    history_name = _required_config_value(
+        data,
+        test_mode=test_mode,
+        test_key="processing_history_test",
+        prod_key="processing_history_prod",
+    )
 
     base_dir = path.parent
-    source_folder = _resolve_path(base_dir, str(source))
-    output_folder = _resolve_path(base_dir, str(output))
+    source_folder = _resolve_path(base_dir, source)
+    output_folder = _resolve_path(base_dir, output)
+    processing_history_path = _resolve_path(base_dir, history_name)
 
     if not source_folder.is_dir():
         raise ConfigError(f"Source folder does not exist: {source_folder}")
@@ -49,7 +74,9 @@ def load_config(config_path: Path | None = None) -> AppConfig:
     return AppConfig(
         source_folder=source_folder,
         output_folder=output_folder,
+        processing_history_path=processing_history_path,
         config_path=path,
+        test_mode=test_mode,
     )
 
 

@@ -5,50 +5,67 @@ import pytest
 from book_sorting.config import ConfigError, get_openai_api_key, load_config
 
 
-def test_load_config_resolves_paths(tmp_path: Path) -> None:
-    source = tmp_path / "input"
-    output = tmp_path / "output"
-    source.mkdir()
-    output.mkdir()
-
-    config_file = tmp_path / "config.yaml"
-    config_file.write_text(
-        f"source_folder: {source}\noutput_folder: {output}\n",
-        encoding="utf-8",
-    )
-
-    config = load_config(config_file)
-    assert config.source_folder == source.resolve()
-    assert config.output_folder == output.resolve()
+def _write_config_file(config_file: Path, **overrides: str) -> None:
+    values = {
+        "source_folder_test": "./input_test_data",
+        "output_folder_test": "./output_test_data",
+        "source_folder_prod": "./input_prod_data",
+        "output_folder_prod": "./output_prod_data",
+        "processing_history_test": "processing_history_test.json",
+        "processing_history_prod": "processing_history_prod.json",
+    }
+    values.update(overrides)
+    lines = [f"{key}: {value}" for key, value in values.items()]
+    config_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def test_load_config_relative_to_config_directory(tmp_path: Path) -> None:
+def test_load_config_test_mode_resolves_paths(tmp_path: Path) -> None:
     source = tmp_path / "input_test_data"
     output = tmp_path / "output_test_data"
     source.mkdir()
     output.mkdir()
 
     config_file = tmp_path / "config.yaml"
-    config_file.write_text(
-        "source_folder: ./input_test_data\noutput_folder: ./output_test_data\n",
-        encoding="utf-8",
+    _write_config_file(
+        config_file,
+        source_folder_test="./input_test_data",
+        output_folder_test="./output_test_data",
     )
 
-    config = load_config(config_file)
+    config = load_config(config_file, test_mode=True)
+    assert config.test_mode is True
     assert config.source_folder == source.resolve()
     assert config.output_folder == output.resolve()
+    assert config.processing_history_path == (tmp_path / "processing_history_test.json").resolve()
+
+
+def test_load_config_production_mode_resolves_paths(tmp_path: Path) -> None:
+    source = tmp_path / "input_prod_data"
+    output = tmp_path / "output_prod_data"
+    source.mkdir()
+    output.mkdir()
+
+    config_file = tmp_path / "config.yaml"
+    _write_config_file(config_file)
+
+    config = load_config(config_file, test_mode=False)
+    assert config.test_mode is False
+    assert config.source_folder == source.resolve()
+    assert config.output_folder == output.resolve()
+    assert config.processing_history_path == (tmp_path / "processing_history_prod.json").resolve()
 
 
 def test_load_config_missing_source_raises(tmp_path: Path) -> None:
     config_file = tmp_path / "config.yaml"
-    config_file.write_text(
-        "source_folder: ./missing\noutput_folder: ./out\n",
-        encoding="utf-8",
+    _write_config_file(
+        config_file,
+        source_folder_test="./missing",
+        output_folder_test="./output_test_data",
     )
-    (tmp_path / "out").mkdir()
+    (tmp_path / "output_test_data").mkdir()
 
     with pytest.raises(ConfigError, match="Source folder does not exist"):
-        load_config(config_file)
+        load_config(config_file, test_mode=True)
 
 
 def test_get_openai_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -8,12 +8,13 @@ The tool scans a source folder, gathers information from filenames and file meta
 
 Input and output folders are set in a project YAML config file: [`config.yaml`](./config.yaml).
 
-Default values are provided for testing:
+Use `uv run book-sort --test` for test mode (`source_folder_test`, `output_folder_test`). Omit `--test` for production paths.
 
-| Setting | Default |
-|---------|---------|
-| `source_folder` | `./input_test_data` |
-| `output_folder` | `./output_test_data` |
+| Setting | Test mode (`--test`) | Production |
+|---------|----------------------|------------|
+| Source | `source_folder_test` | `source_folder_prod` |
+| Output | `output_folder_test` | `output_folder_prod` |
+| Processing history | `processing_history_test` | `processing_history_prod` |
 
 Copy [`.env.example`](./.env.example) to `.env` and set your OpenAI API key. The application uses the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) as its AI runtime.
 
@@ -117,5 +118,6 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-07-21** — Added `--test` mode and separate test/production paths and processing history in `config.yaml`.
 - **2026-07-21** — Run reports are appended to `run-report.txt` in the output folder to keep a history of each run.
 - **2026-07-21** — Windows file copies use extended-length paths when destinations exceed the usual `MAX_PATH` limit.

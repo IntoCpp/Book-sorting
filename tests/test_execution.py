@@ -3,7 +3,7 @@ from pathlib import Path
 from book_sorting.execution.execute import execute_copy
 from book_sorting.models.domain import CopyPlan, CopyPlanEntry
 from book_sorting.models.state import WorkflowState
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 
 
 def _minimal_state(tmp_path: Path) -> WorkflowState:
@@ -12,11 +12,7 @@ def _minimal_state(tmp_path: Path) -> WorkflowState:
     source.mkdir()
     output.mkdir()
     return WorkflowState(
-        config=AppConfig(
-            source_folder=source,
-            output_folder=output,
-            config_path=tmp_path / "config.yaml",
-        ),
+        config=make_app_config(source, output, tmp_path / "config.yaml"),
     )
 
 

@@ -14,7 +14,7 @@ class HistoryEntry:
 
 
 def history_file_path(config: AppConfig) -> Path:
-    return config.config_path.parent / "processing_history.json"
+    return config.processing_history_path
 
 
 def load_history(path: Path) -> list[HistoryEntry]:

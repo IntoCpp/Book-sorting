@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from book_sorting.config import AppConfig
+from conftest import make_app_config
 from book_sorting.discovery.media_types import MediaKind
 from book_sorting.grouping.group import group_files
 from book_sorting.grouping.rules import build_book_groups
@@ -97,11 +97,7 @@ def test_group_files_stage_updates_state(tmp_path: Path) -> None:
     (book_dir / "01.mp3").write_bytes(b"\x00")
     (book_dir / "02.mp3").write_bytes(b"\x00")
 
-    config = AppConfig(
-        source_folder=source,
-        output_folder=output,
-        config_path=tmp_path / "config.yaml",
-    )
+    config = make_app_config(source, output, tmp_path / "config.yaml")
     state = WorkflowState(
         config=config,
         discovered_files=[
