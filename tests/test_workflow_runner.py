@@ -30,23 +30,46 @@ def test_workflow_runner_discovers_files(tmp_path: Path) -> None:
     assert final.report.discovered_count == 1
 
 
-def test_workflow_runner_does_not_modify_output(tmp_path: Path) -> None:
+def test_workflow_runner_does_not_modify_source(tmp_path: Path) -> None:
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()
     output.mkdir()
-    (source / "book.epub").write_text("x", encoding="utf-8")
+    book_file = source / "book.epub"
+    book_file.write_text("x", encoding="utf-8")
+    before = book_file.read_bytes()
 
-    before = list(output.iterdir())
     config = AppConfig(
         source_folder=source,
         output_folder=output,
         config_path=tmp_path / "config.yaml",
     )
     WorkflowRunner().run(WorkflowState(config=config))
-    after = list(output.iterdir())
 
-    assert before == after
+    assert book_file.read_bytes() == before
+
+
+def test_workflow_runner_copies_approved_plan_to_output(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    output = tmp_path / "output"
+    source.mkdir()
+    output.mkdir()
+    (source / "book.epub").write_text("x", encoding="utf-8")
+
+    config = AppConfig(
+        source_folder=source,
+        output_folder=output,
+        config_path=tmp_path / "config.yaml",
+    )
+    final = WorkflowRunner().run(WorkflowState(config=config))
+
+    assert final.execution_results
+    assert any(result.copied for result in final.execution_results)
+    copied_destinations = [
+        result.destination for result in final.execution_results if result.copied
+    ]
+    assert all(path.is_file() for path in copied_destinations)
+    assert any(path.suffix == ".epub" for path in copied_destinations)
 
 
 def test_workflow_runner_ignores_non_media_in_source(tmp_path: Path) -> None:

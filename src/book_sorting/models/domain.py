@@ -67,6 +67,15 @@ class CopyPlan:
 
 
 @dataclass
+class CopyOperationResult:
+    source: Path
+    destination: Path
+    copied: bool = False
+    skipped: bool = False
+    error: str | None = None
+
+
+@dataclass
 class RunReport:
     discovered_count: int = 0
     group_count: int = 0
