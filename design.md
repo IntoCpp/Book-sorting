@@ -385,6 +385,8 @@ Allow the user to review uncertain or potentially problematic results.
 
 Provide a review mechanism independent from the AI platform and user interface.
 
+Human review runs **only when the CLI is started with the `--human-review` flag**. If that flag is not provided, all planned copy operations are auto-approved and the workflow continues without prompting.
+
 The review process must expose:
 
 * Classifications.
@@ -393,17 +395,18 @@ The review process must expose:
 * Warnings.
 * Conflicts.
 
-The user must be able to approve or reject the proposed operation.
+The user must be able to approve or reject each planned copy operation when human review is enabled.
 
 ### Validation
 
-The copy plan can be reviewed before execution.
+The copy plan can be reviewed before execution when `--human-review` is used.
 
 ### How to Test
 
 1. Generate a copy plan that includes a low-confidence classification.
-2. Present the plan for review.
-3. Confirm the user can approve or reject individual items.
+2. Run the review stage with human review enabled.
+3. Confirm the user can approve or reject individual copy operations.
+4. Run without `--human-review` and confirm all copy operations are auto-approved.
 
 ---
 

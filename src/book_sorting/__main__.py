@@ -26,6 +26,11 @@ def main(argv: list[str] | None = None) -> None:
         default=Path("config.yaml"),
         help="Path to project config.yaml",
     )
+    parser.add_argument(
+        "--human-review",
+        action="store_true",
+        help="Pause for human approval before executing the copy plan",
+    )
     args = parser.parse_args(argv)
 
     load_dotenv_file()
@@ -44,7 +49,7 @@ def main(argv: list[str] | None = None) -> None:
     logging.info("Output folder: %s", config.output_folder)
 
     runner = WorkflowRunner()
-    state = WorkflowState(config=config)
+    state = WorkflowState(config=config, human_review=args.human_review)
     final_state = runner.run(state)
 
     if final_state.report:

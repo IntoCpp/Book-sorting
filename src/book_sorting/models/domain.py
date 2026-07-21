@@ -55,6 +55,7 @@ class CopyPlanEntry:
     destination: Path
     group_id: str
     requires_review: bool = False
+    approved: bool = False
 
 
 @dataclass

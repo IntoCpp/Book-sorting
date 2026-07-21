@@ -92,6 +92,7 @@ def copy_plan_to_dict(plan: CopyPlan) -> dict:
                 "destination": str(entry.destination),
                 "group_id": entry.group_id,
                 "requires_review": entry.requires_review,
+                "approved": entry.approved,
             }
             for entry in plan.entries
         ],

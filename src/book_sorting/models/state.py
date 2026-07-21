@@ -13,3 +13,4 @@ class WorkflowState:
     book_groups: list[BookGroup] = field(default_factory=list)
     copy_plan: CopyPlan | None = None
     report: RunReport | None = None
+    human_review: bool = False
