@@ -516,6 +516,8 @@ The report accurately describes the operation.
 
 ## Step 12 - Platform and Capability Isolation
 
+**Implementation status:** Not planned for the current development phase. This section is retained for future reference.
+
 ### Objective
 
 Keep the application independent from a specific AI platform.
@@ -539,6 +541,8 @@ The core workflow can be tested without requiring a live AI call (mock the agent
 ---
 
 ## Step 13 - Quality Improvements
+
+**Implementation status:** Not planned for the current development phase. This section is retained for future reference.
 
 ### Objective
 
