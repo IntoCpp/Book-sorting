@@ -220,5 +220,6 @@ __marimo__/
 # Local test library folders (do not commit; may contain copyrighted media)
 /input_test_data/
 /output_test_data/
+processing_history.json
 # Obscure sample files created by integration tests under input_test_data
 input_test_data/_pytest_obscure/

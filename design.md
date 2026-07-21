@@ -27,6 +27,8 @@ User-facing paths are configured in [`config.yaml`](./config.yaml):
 
 The application loads this file at startup. Users copy and edit it for their own library paths.
 
+Processing history is persisted in `processing_history.json` in the same directory as `config.yaml` (outside the source folder).
+
 ### Environment
 
 | Variable | Description |
