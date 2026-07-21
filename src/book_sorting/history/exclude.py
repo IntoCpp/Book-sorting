@@ -24,6 +24,7 @@ def exclude_processed(state: WorkflowState) -> WorkflowState:
         if item.path.resolve() not in processed_sources
     ]
     excluded = before - len(state.discovered_files)
+    state.history_excluded_count = excluded
     if excluded:
         logger.info(
             "Excluded %s previously processed file(s) using %s",

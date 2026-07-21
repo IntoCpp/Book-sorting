@@ -79,4 +79,11 @@ class CopyOperationResult:
 class RunReport:
     discovered_count: int = 0
     group_count: int = 0
+    books_processed: int = 0
+    books_skipped: int = 0
+    files_copied: int = 0
+    files_skipped_history: int = 0
+    warnings: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    low_confidence: list[str] = field(default_factory=list)
     message: str = ""

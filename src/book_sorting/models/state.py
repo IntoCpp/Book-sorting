@@ -19,5 +19,6 @@ class WorkflowState:
     book_groups: list[BookGroup] = field(default_factory=list)
     copy_plan: CopyPlan | None = None
     execution_results: list[CopyOperationResult] = field(default_factory=list)
+    history_excluded_count: int = 0
     report: RunReport | None = None
     human_review: bool = False
