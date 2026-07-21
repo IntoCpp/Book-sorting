@@ -114,3 +114,7 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 * Allow manual review before applying changes.
 * Save files sorted to avoid duplicate work on future run.
 * Generate a report describing all actions performed.
+
+## History
+
+- **2026-07-21** — Windows file copies use extended-length paths when destinations exceed the usual `MAX_PATH` limit.
