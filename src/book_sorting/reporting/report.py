@@ -1,3 +1,5 @@
+"""Run report generation workflow stage."""
+
 from __future__ import annotations
 
 import logging
@@ -10,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def write_report(state: WorkflowState) -> WorkflowState:
+    """Build a run report, persist it, and attach it to ``state``."""
     logger.info("Stage: report")
     report = build_run_report(state)
     state.report = report

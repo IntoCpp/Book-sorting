@@ -1,3 +1,5 @@
+"""Filesystem copy operations for planned book moves."""
+
 from __future__ import annotations
 
 import shutil
@@ -7,6 +9,7 @@ from book_sorting.models.domain import CopyOperationResult, CopyPlanEntry
 
 
 def copy_plan_entry(entry: CopyPlanEntry) -> CopyOperationResult:
+    """Copy a single plan entry when approved, otherwise mark it skipped."""
     result = CopyOperationResult(
         source=entry.source,
         destination=entry.destination,

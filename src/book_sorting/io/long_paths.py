@@ -1,3 +1,5 @@
+"""Windows long-path helpers for filesystem I/O."""
+
 from __future__ import annotations
 
 import os
@@ -8,6 +10,7 @@ _MAX_PATH = 260
 
 
 def path_needs_extended_length(path: Path) -> bool:
+    """Return whether ``path`` may exceed the Windows MAX_PATH limit."""
     if sys.platform != "win32":
         return False
     return len(os.path.normpath(str(path.resolve()))) >= _MAX_PATH

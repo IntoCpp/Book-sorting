@@ -20,7 +20,14 @@ _DEFAULT_INSTRUCTIONS = (
 
 
 class OpenAIAgentBoundary:
+    """OpenAI Agents SDK implementation of :class:`AgentBoundary`."""
+
     def __init__(self, *, model: str = "gpt-4.1-mini") -> None:
+        """Initialize the research agent with model and tool configuration.
+
+        Args:
+            model: OpenAI model identifier used for research requests.
+        """
         self._agent = Agent(
             name="BookResearcher",
             instructions=_DEFAULT_INSTRUCTIONS,
@@ -30,6 +37,14 @@ class OpenAIAgentBoundary:
         )
 
     def research_book(self, group: BookGroup) -> Classification:
+        """Research a book group with web search and structured output.
+
+        Args:
+            group: Book group whose metadata and files supply research context.
+
+        Returns:
+            Classification parsed from the agent's structured response.
+        """
         prompt = build_research_prompt(group)
         result = Runner.run_sync(self._agent, prompt)
         output: BookResearchOutput = result.final_output
@@ -51,6 +66,14 @@ class OpenAIAgentBoundary:
         )
 
     def classify_book(self, group: BookGroup) -> Classification:
+        """Return existing research or perform research when needed.
+
+        Args:
+            group: Book group that may already have research results.
+
+        Returns:
+            Prior research classification, or a newly researched classification.
+        """
         if group.research is not None:
             return group.research
         return self.research_book(group)

@@ -1,3 +1,5 @@
+"""Public classification API."""
+
 from book_sorting.classification.classifier import classify_group
 from book_sorting.classification.classify import classify_books
 from book_sorting.classification.constants import LOW_CONFIDENCE_THRESHOLD

@@ -1,3 +1,5 @@
+"""Tests for metadata extraction from NFO, path hints, and embedded ebook tags."""
+
 from pathlib import Path
 
 import pytest
@@ -17,6 +19,13 @@ def _discovered(path: Path, kind: MediaKind) -> DiscoveredFile:
 
 
 def test_parse_nfo_xml() -> None:
+    """Verify XML-style NFO content is parsed into title, author, and series.
+
+    Goal: Confirm ``parse_nfo_text`` extracts fields from a simple XML
+    document including the ``serie`` element alias.
+    Expected result: Dict with title, author, and series matching input.
+    On Failure: NFO XML parser or field-name mapping changed.
+    """
     content = """
     <document>
       <title>Test Book</title>
@@ -31,6 +40,14 @@ def test_parse_nfo_xml() -> None:
 
 
 def test_nfo_takes_priority_over_path_hints(tmp_path: Path, show) -> None:
+    """Verify NFO metadata overrides folder-name path hints.
+
+    Goal: Confirm ``extract_group_metadata`` prefers NFO title and author
+    over misleading folder names.
+    Expected result: ``nfo_present`` is ``True``; title and author from NFO;
+    title source is ``"nfo"``.
+    On Failure: Metadata source priority order changed.
+    """
     book_dir = tmp_path / "Ignored Folder Name"
     book_dir.mkdir()
     (book_dir / "book.epub").write_text("not a real epub", encoding="utf-8")
@@ -58,6 +75,14 @@ def test_nfo_takes_priority_over_path_hints(tmp_path: Path, show) -> None:
 
 
 def test_extract_metadata_stage_attaches_to_groups(tmp_path: Path, show) -> None:
+    """Verify the extract-metadata workflow stage attaches metadata to groups.
+
+    Goal: Confirm ``extract_metadata`` populates ``metadata`` on book groups
+    from NFO files in the group directory.
+    Expected result: First group's metadata has title, author, and series from
+    the NFO file.
+    On Failure: Extract-metadata stage or NFO key-value parsing changed.
+    """
     source = tmp_path / "source"
     book_dir = source / "Audiobook"
     book_dir.mkdir(parents=True)
@@ -91,6 +116,14 @@ def test_extract_metadata_stage_attaches_to_groups(tmp_path: Path, show) -> None
 
 
 def test_epub_embedded_metadata(tmp_path: Path, show) -> None:
+    """Verify embedded EPUB tags are extracted as metadata.
+
+    Goal: Confirm ``extract_group_metadata`` reads title and author from
+    embedded EPUB metadata via ebooklib.
+    Expected result: Title and author match embedded values; title source is
+    ``"ebook_tags"``.
+    On Failure: EPUB metadata extraction or ebooklib integration changed.
+    """
     epub_path = tmp_path / "embedded.epub"
     _write_minimal_epub(epub_path, title="EPUB Title", author="EPUB Author")
 

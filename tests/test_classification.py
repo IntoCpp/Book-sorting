@@ -1,3 +1,5 @@
+"""Tests for book classification normalization and workflow stage integration."""
+
 from pathlib import Path
 
 from book_sorting.classification.classifier import classify_group
@@ -16,6 +18,15 @@ def _group_with_research(research: Classification) -> BookGroup:
 
 
 def test_classify_produces_identical_results_on_repeat() -> None:
+    """Verify classification is deterministic for the same research input.
+
+    Goal: Confirm ``classify_group`` returns stable, normalized output when
+    called twice on identical research data.
+    Expected result: Both calls return equal classifications with trimmed
+    title, preserved author/series/order, and no spurious changes.
+    On Failure: Classification logic became non-deterministic or field
+    normalization rules changed unexpectedly.
+    """
     research = Classification(
         title="  Dungeon Duel  ",
         author="James Hunter",
@@ -36,6 +47,14 @@ def test_classify_produces_identical_results_on_repeat() -> None:
 
 
 def test_standalone_series_marker_becomes_none(show) -> None:
+    """Verify the literal series name ``Standalone`` is normalized to None.
+
+    Goal: Confirm ``classify_group`` treats ``series="Standalone"`` as no
+    series and clears ``series_order``.
+    Expected result: ``series`` and ``series_order`` are ``None``;
+    ``low_confidence`` remains ``False``.
+    On Failure: Standalone-series normalization rule was removed or altered.
+    """
     research = Classification(
         title="Solo Book",
         author="Author",
@@ -53,6 +72,14 @@ def test_standalone_series_marker_becomes_none(show) -> None:
 
 
 def test_missing_author_is_low_confidence(show) -> None:
+    """Verify missing author triggers low-confidence classification.
+
+    Goal: Confirm ``classify_group`` flags groups without an author as
+    low-confidence and reduces confidence score.
+    Expected result: ``low_confidence`` is ``True`` and ``confidence`` is
+    ``0.4``.
+    On Failure: Low-confidence heuristics for missing author changed.
+    """
     research = Classification(title="Only Title", author=None, confidence=0.9)
     result = classify_group(_group_with_research(research))
 
@@ -65,6 +92,15 @@ def test_missing_author_is_low_confidence(show) -> None:
 
 
 def test_classify_stage_updates_state(tmp_path: Path) -> None:
+    """Verify the classify workflow stage attaches classifications to groups.
+
+    Goal: Confirm ``classify_books`` populates ``classification`` on each
+    book group from existing research data.
+    Expected result: First group's ``classification`` is set with title
+    ``Book``.
+    On Failure: Classify stage no longer mutates state or requires research
+    prerequisites that are not met.
+    """
     from conftest import make_app_config
 
     config = make_app_config(tmp_path, tmp_path, tmp_path / "config.yaml")

@@ -1,3 +1,5 @@
+"""Copy plan construction from classified book groups."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,6 +14,7 @@ def build_copy_plan_for_groups(
     groups: list[BookGroup],
     output_root: Path,
 ) -> CopyPlan:
+    """Build a copy plan that maps each group's files to output destinations."""
     plan = CopyPlan()
     destination_map: dict[Path, list[Path]] = {}
 
@@ -85,6 +88,7 @@ def build_copy_plan_for_groups(
 
 
 def copy_plan_to_dict(plan: CopyPlan) -> dict:
+    """Serialize a copy plan to a JSON-compatible dictionary."""
     return {
         "entries": [
             {

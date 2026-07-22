@@ -1,3 +1,5 @@
+"""Tests for run-report building, messaging, and persistence."""
+
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -16,6 +18,14 @@ from book_sorting.reporting.report import write_report
 
 
 def test_report_includes_processed_skipped_and_warnings(show) -> None:
+    """Verify run report aggregates processed, skipped, and warning counts.
+
+    Goal: Confirm ``build_run_report`` tallies books processed/skipped,
+    files copied, history exclusions, warnings, and low-confidence flags.
+    Expected result: Counts match fixture state; message contains summary
+    lines for books, files, warnings, and low-confidence classifications.
+    On Failure: Report aggregation or message formatting changed.
+    """
     state = WorkflowState(
         config=make_app_config(
             Path("C:/in"),
@@ -93,6 +103,14 @@ def test_report_includes_processed_skipped_and_warnings(show) -> None:
 
 
 def test_report_includes_execution_errors() -> None:
+    """Verify run report surfaces execution errors and plan conflicts.
+
+    Goal: Confirm ``build_run_report`` includes copy failures and copy-plan
+    conflict messages in the report errors and message text.
+    Expected result: ``report.errors`` non-empty; message contains error text
+    and conflict description.
+    On Failure: Error or conflict inclusion in reports regressed.
+    """
     state = WorkflowState(
         config=make_app_config(
             Path("C:/in"),
@@ -134,6 +152,14 @@ def test_report_includes_execution_errors() -> None:
 
 
 def test_write_report_stage_attaches_summary(tmp_path: Path) -> None:
+    """Verify the write-report workflow stage attaches a report to state.
+
+    Goal: Confirm ``write_report`` sets ``state.report`` with a summary
+    message containing the run header.
+    Expected result: ``state.report`` is not ``None`` and message includes
+    ``Book Sorting Run Summary``.
+    On Failure: Write-report stage no longer populates ``state.report``.
+    """
     state = WorkflowState(
         config=make_app_config(
             tmp_path / "in",
@@ -147,6 +173,14 @@ def test_write_report_stage_attaches_summary(tmp_path: Path) -> None:
 
 
 def test_write_report_appends_to_output_file(tmp_path: Path) -> None:
+    """Verify write-report appends each run to the output report file.
+
+    Goal: Confirm successive ``write_report`` calls append to
+    ``RUN_REPORT_FILENAME`` without overwriting prior runs.
+    Expected result: Report file exists; second write doubles summary header
+    count and grows file size.
+    On Failure: Report persistence overwrites instead of appending.
+    """
     output = tmp_path / "out"
     state = WorkflowState(
         config=make_app_config(
@@ -172,6 +206,13 @@ def test_write_report_appends_to_output_file(tmp_path: Path) -> None:
 
 
 def test_append_report_to_file_uses_timestamp_separator(tmp_path: Path) -> None:
+    """Verify appended reports use timestamp separators between runs.
+
+    Goal: Confirm ``append_report_to_file`` writes ``Run at`` timestamps and
+    preserves insertion order across multiple appends.
+    Expected result: Two timestamp lines; first summary appears before second.
+    On Failure: Timestamp format or append ordering changed.
+    """
     output = tmp_path / "out"
     run_at = datetime(2026, 7, 21, 16, 9, tzinfo=UTC)
 

@@ -1,3 +1,5 @@
+"""Build prompts for AI book research."""
+
 from __future__ import annotations
 
 import json
@@ -6,6 +8,14 @@ from book_sorting.models.domain import BookGroup
 
 
 def build_research_prompt(group: BookGroup) -> str:
+    """Build the user prompt sent to the research agent.
+
+    Args:
+        group: Book group whose files and extracted metadata supply context.
+
+    Returns:
+        Instruction text followed by a JSON payload describing the group.
+    """
     meta = group.metadata
     files = [str(f.path) for f in group.files]
     payload = {

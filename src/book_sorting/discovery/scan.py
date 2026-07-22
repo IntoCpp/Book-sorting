@@ -1,3 +1,10 @@
+"""Source folder scanning stage for the Book Sorting Tool.
+
+Recursively walks the configured source directory and collects
+e-book and audiobook files as :class:`~book_sorting.models.domain.DiscoveredFile`
+instances.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -10,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 
 def discover_source_files(state: WorkflowState) -> WorkflowState:
+    """Discover e-book and audiobook files under the configured source folder.
+
+    Args:
+        state: Workflow state whose ``config.source_folder`` is scanned.
+
+    Returns:
+        The same :class:`WorkflowState` with ``discovered_files`` populated.
+    """
     logger.info("Stage: discover")
     source = state.config.source_folder
     discovered: list[DiscoveredFile] = []

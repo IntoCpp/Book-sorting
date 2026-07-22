@@ -1,3 +1,5 @@
+"""Run summary construction and formatting."""
+
 from __future__ import annotations
 
 from book_sorting.models.domain import BookGroup, RunReport
@@ -5,6 +7,7 @@ from book_sorting.models.state import WorkflowState
 
 
 def _groups_with_copied_files(state: WorkflowState) -> set[str]:
+    """Return group identifiers that had at least one file copied."""
     copied: set[str] = set()
     plan = state.copy_plan
     if plan is None:
@@ -16,6 +19,7 @@ def _groups_with_copied_files(state: WorkflowState) -> set[str]:
 
 
 def _format_low_confidence_line(group: BookGroup) -> str:
+    """Format a single low-confidence classification line for the report."""
     classification = group.classification
     if classification is None:
         return group.group_id
@@ -28,6 +32,7 @@ def _format_low_confidence_line(group: BookGroup) -> str:
 
 
 def build_run_report(state: WorkflowState) -> RunReport:
+    """Build a structured report from the completed workflow state."""
     copied_groups = _groups_with_copied_files(state)
     all_group_ids = {group.group_id for group in state.book_groups}
     books_processed = len(copied_groups)
@@ -80,6 +85,7 @@ def format_run_report(
     *,
     files_skipped_execution: int = 0,
 ) -> str:
+    """Format a run report as human-readable text."""
     lines = [
         "Book Sorting Run Summary",
         "========================",

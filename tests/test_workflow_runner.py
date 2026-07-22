@@ -1,3 +1,5 @@
+"""Tests for end-to-end workflow runner behavior."""
+
 from pathlib import Path
 
 from conftest import make_app_config
@@ -7,6 +9,14 @@ from book_sorting.workflow.runner import WorkflowRunner
 
 
 def test_workflow_runner_discovers_files(tmp_path: Path) -> None:
+    """Verify workflow runner discovers and groups source media files.
+
+    Goal: Confirm a full ``WorkflowRunner`` run discovers an epub, creates
+    one book group, and produces a report with matching discovered count.
+    Expected result: One discovered ebook file; one book group; report
+    ``discovered_count`` is 1.
+    On Failure: Discovery, grouping, or reporting stages failed in the runner.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()
@@ -27,6 +37,13 @@ def test_workflow_runner_discovers_files(tmp_path: Path) -> None:
 
 
 def test_workflow_runner_does_not_modify_source(tmp_path: Path) -> None:
+    """Verify workflow runner leaves source file bytes unchanged.
+
+    Goal: Confirm ``WorkflowRunner`` does not alter source files during
+    processing.
+    Expected result: Source file bytes identical before and after the run.
+    On Failure: Runner performs move/truncate on source files.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()
@@ -42,6 +59,14 @@ def test_workflow_runner_does_not_modify_source(tmp_path: Path) -> None:
 
 
 def test_workflow_runner_copies_approved_plan_to_output(tmp_path: Path) -> None:
+    """Verify workflow runner copies approved files to the output folder.
+
+    Goal: Confirm end-to-end execution produces at least one successful copy
+    with an epub destination file on disk.
+    Expected result: Non-empty ``execution_results``; at least one
+    ``copied=True``; copied destinations exist as files.
+    On Failure: Review, execution, or copy-plan approval pipeline regressed.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()
@@ -61,6 +86,13 @@ def test_workflow_runner_copies_approved_plan_to_output(tmp_path: Path) -> None:
 
 
 def test_workflow_runner_ignores_non_media_in_source(tmp_path: Path) -> None:
+    """Verify workflow runner ignores non-media companion files in source.
+
+    Goal: Confirm only recognized media files are discovered when cover
+    images are present alongside an ebook.
+    Expected result: One discovered file; report ``discovered_count`` is 1.
+    On Failure: Non-media files included in discovery or report counts wrong.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()

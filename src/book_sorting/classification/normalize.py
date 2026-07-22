@@ -1,3 +1,5 @@
+"""Normalize classification fields and confidence flags."""
+
 from __future__ import annotations
 
 from book_sorting.classification.constants import LOW_CONFIDENCE_THRESHOLD
@@ -7,10 +9,26 @@ _STANDALONE_SERIES_MARKERS = frozenset({"", "standalone", "none", "n/a", "na"})
 
 
 def normalize_whitespace(value: str) -> str:
+    """Collapse internal whitespace in a string.
+
+    Args:
+        value: Raw string to normalize.
+
+    Returns:
+        String with consecutive whitespace replaced by single spaces.
+    """
     return " ".join(value.split())
 
 
 def normalize_name(value: str | None) -> str | None:
+    """Trim and collapse whitespace for a name-like field.
+
+    Args:
+        value: Raw name value, or ``None``.
+
+    Returns:
+        Normalized name, or ``None`` when the value is empty after cleaning.
+    """
     if value is None:
         return None
     cleaned = normalize_whitespace(value.strip())
@@ -18,6 +36,14 @@ def normalize_name(value: str | None) -> str | None:
 
 
 def normalize_series(value: str | None) -> str | None:
+    """Normalize a series name and map standalone markers to ``None``.
+
+    Args:
+        value: Raw series value, or ``None``.
+
+    Returns:
+        Normalized series name, or ``None`` for empty or standalone markers.
+    """
     cleaned = normalize_name(value)
     if cleaned is None:
         return None
@@ -27,12 +53,29 @@ def normalize_series(value: str | None) -> str | None:
 
 
 def is_low_confidence(confidence: float | None) -> bool:
+    """Return whether a confidence score is below the configured threshold.
+
+    Args:
+        confidence: Confidence value between 0 and 1, or ``None``.
+
+    Returns:
+        ``True`` when confidence is missing or below the low-confidence
+        threshold.
+    """
     if confidence is None:
         return True
     return confidence < LOW_CONFIDENCE_THRESHOLD
 
 
 def normalize_classification(candidate: Classification) -> Classification:
+    """Apply field normalization and low-confidence rules to a classification.
+
+    Args:
+        candidate: Raw classification from research or metadata.
+
+    Returns:
+        New classification with cleaned fields and updated confidence flags.
+    """
     confidence = candidate.confidence
     if confidence is None:
         confidence = 0.0

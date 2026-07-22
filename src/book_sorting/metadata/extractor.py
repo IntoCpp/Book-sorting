@@ -1,3 +1,5 @@
+"""Merge metadata from NFO files, embedded tags, and path hints."""
+
 from __future__ import annotations
 
 from book_sorting.metadata.audio_tags import read_audio_metadata
@@ -16,6 +18,18 @@ _METADATA_FIELDS = (
 
 
 def extract_group_metadata(group: BookGroup) -> ExtractedMetadata:
+    """Collect and merge metadata for a single book group.
+
+    Sources are applied in priority order: NFO files, embedded ebook or audio
+    tags, then path-based hints. Later sources fill only empty fields unless
+    they are the primary NFO source.
+
+    Args:
+        group: Book group whose files and root path supply metadata.
+
+    Returns:
+        Merged extracted metadata with per-field source tracking.
+    """
     metadata = ExtractedMetadata()
     root = group.root_path or (group.files[0].path.parent if group.files else None)
 
@@ -46,6 +60,14 @@ def _apply_fields(
     source: str,
     fill_only: bool = False,
 ) -> None:
+    """Apply parsed field values onto an ``ExtractedMetadata`` instance.
+
+    Args:
+        metadata: Target metadata object to update in place.
+        values: Field names mapped to string values from a single source.
+        source: Name recorded in ``field_sources`` for applied fields.
+        fill_only: When ``True``, skip fields that already have a value.
+    """
     for field in _METADATA_FIELDS:
         if field not in values or not values[field]:
             continue

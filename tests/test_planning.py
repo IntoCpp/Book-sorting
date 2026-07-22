@@ -1,3 +1,5 @@
+"""Tests for copy-plan building, destination paths, and planning stage behavior."""
+
 import json
 from pathlib import Path
 
@@ -10,6 +12,14 @@ from book_sorting.models.state import WorkflowState
 
 
 def test_build_series_destination_path(tmp_path: Path) -> None:
+    """Verify series book directory path follows author/series/order-title layout.
+
+    Goal: Confirm ``build_book_directory`` constructs the correct nested path
+    for a numbered series book.
+    Expected result: Path is
+    ``Author / Series / 05 - Title`` under the output root.
+    On Failure: Series path template or zero-padding logic changed.
+    """
     dest = build_book_directory(
         tmp_path,
         author="James Hunter",
@@ -21,6 +31,13 @@ def test_build_series_destination_path(tmp_path: Path) -> None:
 
 
 def test_build_standalone_destination_path(tmp_path: Path) -> None:
+    """Verify standalone book directory path uses Standalone segment.
+
+    Goal: Confirm ``build_book_directory`` places books without a series under
+    ``Author / Standalone / Title``.
+    Expected result: Path matches standalone layout under output root.
+    On Failure: Standalone path template changed.
+    """
     dest = build_book_directory(
         tmp_path,
         author="Douglas Adams",
@@ -32,6 +49,14 @@ def test_build_standalone_destination_path(tmp_path: Path) -> None:
 
 
 def test_copy_plan_includes_media_and_companion_files(tmp_path: Path, show) -> None:
+    """Verify copy plan includes ebook plus companion cover and nfo files.
+
+    Goal: Confirm ``build_copy_plan_for_groups`` plans copies for the media
+    file and sibling companion files in the book directory.
+    Expected result: Destinations include ``book.epub``, ``cover.jpg``, and
+    ``book.nfo`` under the classified series path.
+    On Failure: Companion-file discovery or plan entry generation changed.
+    """
     output = tmp_path / "output"
     book_dir = tmp_path / "source" / "My Book"
     book_dir.mkdir(parents=True)
@@ -69,6 +94,13 @@ def test_copy_plan_includes_media_and_companion_files(tmp_path: Path, show) -> N
 
 
 def test_copy_plan_flags_low_confidence_for_review(show) -> None:
+    """Verify low-confidence groups are flagged for review in the copy plan.
+
+    Goal: Confirm ``build_copy_plan_for_groups`` adds group IDs to
+    ``review_group_ids`` and sets ``requires_review`` on entries.
+    Expected result: Group ``g-low`` in review list; first entry requires review.
+    On Failure: Low-confidence review flagging logic changed.
+    """
     output = Path("C:/library")
     group = BookGroup(
         group_id="g-low",
@@ -90,6 +122,13 @@ def test_copy_plan_flags_low_confidence_for_review(show) -> None:
 
 
 def test_copy_plan_detects_destination_conflicts() -> None:
+    """Verify copy plan detects multiple sources mapping to same destination.
+
+    Goal: Confirm ``build_copy_plan_for_groups`` records conflicts when two
+    groups with identical classification target the same output path.
+    Expected result: ``plan.conflicts`` is non-empty.
+    On Failure: Conflict detection logic removed or classification paths diverge.
+    """
     output = Path("C:/library")
     classification = Classification(
         author="Author",
@@ -118,6 +157,13 @@ def test_copy_plan_detects_destination_conflicts() -> None:
 
 
 def test_copy_plan_is_serializable() -> None:
+    """Verify copy plan can be converted to JSON-serializable dict.
+
+    Goal: Confirm ``copy_plan_to_dict`` produces a payload that
+    ``json.dumps`` accepts with an ``entries`` key.
+    Expected result: Serialized JSON string contains ``"entries"``.
+    On Failure: Dict conversion or JSON compatibility regressed.
+    """
     group = BookGroup(
         group_id="g1",
         files=[DiscoveredFile(path=Path("book.epub"), media_kind=MediaKind.EBOOK)],
@@ -130,6 +176,13 @@ def test_copy_plan_is_serializable() -> None:
 
 
 def test_generate_copy_plan_does_not_create_output_files(tmp_path: Path) -> None:
+    """Verify planning stage does not write files to the output folder.
+
+    Goal: Confirm ``generate_copy_plan`` only builds the in-memory plan
+    without creating output directory contents.
+    Expected result: Output tree unchanged; ``state.copy_plan`` has one entry.
+    On Failure: Planning stage prematurely creates output files or dirs.
+    """
     output = tmp_path / "output_test_data"
     output.mkdir()
     source = tmp_path / "source"

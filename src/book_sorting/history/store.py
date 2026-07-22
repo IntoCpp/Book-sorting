@@ -1,3 +1,5 @@
+"""Persistent storage for processed source file history."""
+
 from __future__ import annotations
 
 import json
@@ -9,15 +11,19 @@ from book_sorting.config import AppConfig
 
 @dataclass(frozen=True)
 class HistoryEntry:
+    """Record of a source file and its optional destination after processing."""
+
     source: str
     destination: str | None = None
 
 
 def history_file_path(config: AppConfig) -> Path:
+    """Return the configured path to the processing history file."""
     return config.processing_history_path
 
 
 def load_history(path: Path) -> list[HistoryEntry]:
+    """Load processing history entries from ``path``."""
     if not path.is_file():
         return []
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -40,10 +46,12 @@ def load_history(path: Path) -> list[HistoryEntry]:
 
 
 def load_processed_sources(path: Path) -> set[Path]:
+    """Return resolved source paths recorded in the processing history."""
     return {Path(entry.source).resolve() for entry in load_history(path)}
 
 
 def append_history_entries(path: Path, new_entries: list[HistoryEntry]) -> None:
+    """Append new history entries to ``path``, skipping duplicate sources."""
     if not new_entries:
         return
 

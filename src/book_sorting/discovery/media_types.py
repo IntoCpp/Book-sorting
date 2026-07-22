@@ -1,3 +1,9 @@
+"""File extension to media-type mapping for discovery.
+
+Defines Calibre-aligned e-book extensions and common audiobook formats,
+and classifies paths by suffix.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -61,6 +67,14 @@ AUDIOBOOK_EXTENSIONS: frozenset[str] = frozenset(
 
 
 def classify_media_path(path: Path) -> MediaKind | None:
+    """Classify a file path as e-book, audiobook, or unsupported.
+
+    Args:
+        path: File path whose suffix is checked against known extensions.
+
+    Returns:
+        The matching :class:`MediaKind`, or None when the suffix is unrecognized.
+    """
     suffix = path.suffix.lower().lstrip(".")
     if not suffix:
         return None

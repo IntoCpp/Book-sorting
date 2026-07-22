@@ -1,3 +1,5 @@
+"""CLI for listing authors and books in the production output library."""
+
 from __future__ import annotations
 
 import argparse
@@ -14,20 +16,26 @@ from book_sorting.models.domain import MediaKind
 
 
 class _OutputWriter:
+    """Write lines to stdout and optionally mirror them to a file."""
+
     def __init__(self, output_file: Path | None) -> None:
+        """Initialize the writer with an optional output file."""
         self._handle = output_file.open("w", encoding="utf-8") if output_file else None
 
     def write_line(self, line: str = "") -> None:
+        """Write a line to stdout and the output file when configured."""
         print(line)
         if self._handle is not None:
             self._handle.write(line + "\n")
 
     def close(self) -> None:
+        """Close the output file handle when one was opened."""
         if self._handle is not None:
             self._handle.close()
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """Build the command-line argument parser."""
     parser = argparse.ArgumentParser(
         description="List authors and books from the production output library.",
     )
@@ -65,6 +73,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """List authors and books from the configured production output library."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 

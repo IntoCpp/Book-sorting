@@ -1,3 +1,5 @@
+"""Parse Kodi-style NFO files for book metadata."""
+
 from __future__ import annotations
 
 import re
@@ -14,6 +16,15 @@ _NFO_FIELD_TAGS = {
 
 
 def find_nfo_file(directory: Path) -> Path | None:
+    """Locate the first ``.nfo`` file in a directory.
+
+    Args:
+        directory: Directory to search for NFO files.
+
+    Returns:
+        Path to the lexicographically first ``.nfo`` file, or ``None`` when
+        the directory is missing or contains no candidates.
+    """
     if not directory.is_dir():
         return None
     candidates = sorted(directory.glob("*.nfo"), key=lambda p: p.name.lower())
@@ -23,6 +34,16 @@ def find_nfo_file(directory: Path) -> Path | None:
 
 
 def parse_nfo_text(content: str) -> dict[str, str]:
+    """Parse metadata fields from raw NFO file text.
+
+    Supports both XML elements and ``key: value`` line formats.
+
+    Args:
+        content: Full text contents of an NFO file.
+
+    Returns:
+        Canonical field names mapped to parsed string values.
+    """
     result: dict[str, str] = {}
     stripped = content.strip()
     if not stripped:
@@ -35,6 +56,14 @@ def parse_nfo_text(content: str) -> dict[str, str]:
 
 
 def _parse_nfo_xml(content: str) -> dict[str, str]:
+    """Extract metadata fields from XML-formatted NFO content.
+
+    Args:
+        content: NFO text expected to contain XML elements.
+
+    Returns:
+        Canonical field names mapped to element text values.
+    """
     fields: dict[str, str] = {}
     try:
         root = ET.fromstring(content)
@@ -53,6 +82,14 @@ def _parse_nfo_xml(content: str) -> dict[str, str]:
 
 
 def _parse_nfo_key_value_lines(content: str) -> dict[str, str]:
+    """Extract metadata fields from ``key: value`` NFO lines.
+
+    Args:
+        content: NFO text that may contain colon- or equals-separated lines.
+
+    Returns:
+        Canonical field names mapped to parsed line values.
+    """
     fields: dict[str, str] = {}
     patterns = {
         "title": re.compile(r"^(?:title|booktitle)\s*[:=]\s*(.+)$", re.I),
@@ -77,6 +114,15 @@ def _parse_nfo_key_value_lines(content: str) -> dict[str, str]:
 
 
 def load_nfo_from_directory(directory: Path) -> dict[str, str]:
+    """Load and parse the NFO file in a directory, if present.
+
+    Args:
+        directory: Directory that may contain an ``.nfo`` file.
+
+    Returns:
+        Parsed metadata fields, plus ``_nfo_path`` when parsing succeeds,
+        or an empty dict when no NFO file is found.
+    """
     nfo_path = find_nfo_file(directory)
     if nfo_path is None:
         return {}

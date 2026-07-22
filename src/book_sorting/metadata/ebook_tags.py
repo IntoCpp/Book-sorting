@@ -1,3 +1,5 @@
+"""Read embedded metadata from ebook files."""
+
 from __future__ import annotations
 
 import logging
@@ -9,6 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 def read_ebook_metadata(path: Path) -> dict[str, str]:
+    """Read Dublin Core metadata from an EPUB file.
+
+    Args:
+        path: Path to an ebook file; only ``.epub`` is supported.
+
+    Returns:
+        Mapping of canonical field names to string values, or an empty dict
+        when the format is unsupported or reading fails.
+    """
     if path.suffix.lower() != ".epub":
         return {}
 

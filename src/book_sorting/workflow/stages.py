@@ -1,3 +1,9 @@
+"""Workflow stage registry for the Book Sorting Tool.
+
+Defines the default ordered pipeline from file discovery through reporting.
+Each stage is a callable that accepts and returns a :class:`WorkflowState`.
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -16,6 +22,7 @@ from book_sorting.research.research import research_books
 from book_sorting.review.review import review_plan
 
 Stage = Callable[[WorkflowState], WorkflowState]
+"""Type alias for a single workflow stage function."""
 
 DEFAULT_STAGES: list[Stage] = [
     discover_source_files,
@@ -30,3 +37,4 @@ DEFAULT_STAGES: list[Stage] = [
     record_history,
     write_report,
 ]
+"""Default ordered pipeline executed by :class:`~book_sorting.workflow.runner.WorkflowRunner`."""

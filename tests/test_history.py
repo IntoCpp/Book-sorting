@@ -1,3 +1,5 @@
+"""Tests for processing history persistence, exclusion, and workflow integration."""
+
 from pathlib import Path
 
 from conftest import make_app_config
@@ -29,12 +31,26 @@ def _state(tmp_path: Path) -> WorkflowState:
 
 
 def test_load_history_missing_file_is_empty(tmp_path: Path) -> None:
+    """Verify loading a non-existent history file returns empty collections.
+
+    Goal: Confirm ``load_history`` and ``load_processed_sources`` handle a
+    missing history file gracefully.
+    Expected result: Empty list and empty set returned without raising.
+    On Failure: Missing-file handling raises or returns stale data.
+    """
     path = tmp_path / "processing_history.json"
     assert load_history(path) == []
     assert load_processed_sources(path) == set()
 
 
 def test_append_history_entry(tmp_path: Path) -> None:
+    """Verify appending a history entry persists source and destination.
+
+    Goal: Confirm ``append_history_entries`` writes an entry that can be
+    reloaded with matching source and destination paths.
+    Expected result: One loaded entry with identical source and destination.
+    On Failure: Serialization format or append logic changed.
+    """
     path = tmp_path / "processing_history.json"
     entry = HistoryEntry(
         source=str((tmp_path / "book.epub").resolve()),
@@ -49,6 +65,14 @@ def test_append_history_entry(tmp_path: Path) -> None:
 
 
 def test_exclude_processed_removes_known_sources(tmp_path: Path) -> None:
+    """Verify previously processed sources are excluded from discovery.
+
+    Goal: Confirm ``exclude_processed`` removes discovered files whose
+    source paths appear in processing history.
+    Expected result: Only the unprocessed ``other.epub`` remains in
+    ``discovered_files``.
+    On Failure: History exclusion matching or path normalization changed.
+    """
     state = _state(tmp_path)
     book = state.config.source_folder / "book.epub"
     book.write_text("x", encoding="utf-8")
@@ -70,6 +94,13 @@ def test_exclude_processed_removes_known_sources(tmp_path: Path) -> None:
 
 
 def test_record_history_only_successful_copies(tmp_path: Path) -> None:
+    """Verify history records only successfully copied sources.
+
+    Goal: Confirm ``record_history`` after a mixed success/failure execution
+    persists only the source that was actually copied.
+    Expected result: Processed-sources set contains only the good source.
+    On Failure: Failed copies are recorded or successful copies are omitted.
+    """
     state = _state(tmp_path)
     good = state.config.source_folder / "good.epub"
     good.write_text("ok", encoding="utf-8")
@@ -103,6 +134,14 @@ def test_record_history_only_successful_copies(tmp_path: Path) -> None:
 
 
 def test_second_workflow_run_skips_processed_file(tmp_path: Path) -> None:
+    """Verify a second workflow run skips files already in history.
+
+    Goal: Confirm end-to-end that after a successful first run, a second
+    ``WorkflowRunner`` invocation discovers zero files.
+    Expected result: Second run has empty ``discovered_files`` and report
+    ``discovered_count`` of 0.
+    On Failure: History exclusion not applied between workflow runs.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()

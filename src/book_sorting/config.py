@@ -1,3 +1,9 @@
+"""Configuration loading for the Book Sorting Tool.
+
+Loads ``config.yaml``, resolves source/output/history paths, and provides
+access to environment variables such as the OpenAI API key.
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,6 +16,16 @@ import os
 
 @dataclass(frozen=True)
 class AppConfig:
+    """Immutable application settings loaded from ``config.yaml``.
+
+    Attributes:
+        source_folder: Root directory to scan for e-books and audiobooks.
+        output_folder: Destination library root for organized copies.
+        processing_history_path: File tracking previously processed items.
+        config_path: Resolved path to the YAML configuration file.
+        test_mode: When True, use test folder paths from config instead of production.
+    """
+
     source_folder: Path
     output_folder: Path
     processing_history_path: Path
@@ -18,10 +34,11 @@ class AppConfig:
 
 
 class ConfigError(Exception):
-    pass
+    """Raised when configuration is missing, invalid, or refers to non-existent paths."""
 
 
 def _resolve_path(base_dir: Path, value: str) -> Path:
+    """Resolve a config path value relative to ``base_dir`` when not absolute."""
     path = Path(value)
     if path.is_absolute():
         return path
@@ -29,6 +46,11 @@ def _resolve_path(base_dir: Path, value: str) -> Path:
 
 
 def _required_config_value(data: dict, *, test_mode: bool, test_key: str, prod_key: str) -> str:
+    """Return the test or production config value for ``test_key`` / ``prod_key``.
+
+    Raises:
+        ConfigError: If the selected key is missing or empty in ``data``.
+    """
     key = test_key if test_mode else prod_key
     value = data.get(key)
     if not value:
@@ -37,7 +59,17 @@ def _required_config_value(data: dict, *, test_mode: bool, test_key: str, prod_k
 
 
 def load_output_folder_prod(config_path: Path | None = None) -> tuple[Path, Path]:
-    """Return the config file path and resolved production output folder."""
+    """Load only the production output folder from config.
+
+    Args:
+        config_path: Path to ``config.yaml``; defaults to ``config.yaml`` in the cwd.
+
+    Returns:
+        A tuple of the resolved config file path and production output folder path.
+
+    Raises:
+        ConfigError: If the config file, key, or output directory is missing.
+    """
     path = (config_path or Path("config.yaml")).resolve()
     if not path.is_file():
         raise ConfigError(f"Config file not found: {path}")
@@ -57,6 +89,18 @@ def load_output_folder_prod(config_path: Path | None = None) -> tuple[Path, Path
 
 
 def load_config(config_path: Path | None = None, *, test_mode: bool = False) -> AppConfig:
+    """Load and validate the full application configuration.
+
+    Args:
+        config_path: Path to ``config.yaml``; defaults to ``config.yaml`` in the cwd.
+        test_mode: When True, read test folder and history keys instead of production.
+
+    Returns:
+        A validated :class:`AppConfig` with all paths resolved.
+
+    Raises:
+        ConfigError: If the config file, required keys, or source folder is missing.
+    """
     path = (config_path or Path("config.yaml")).resolve()
     if not path.is_file():
         raise ConfigError(f"Config file not found: {path}")
@@ -101,6 +145,11 @@ def load_config(config_path: Path | None = None, *, test_mode: bool = False) -> 
 
 
 def load_dotenv_file(env_path: Path | None = None) -> None:
+    """Load environment variables from a ``.env`` file.
+
+    Args:
+        env_path: Explicit path to a dotenv file; when None, uses default discovery.
+    """
     if env_path is None:
         load_dotenv()
         return
@@ -108,6 +157,7 @@ def load_dotenv_file(env_path: Path | None = None) -> None:
 
 
 def get_openai_api_key() -> str | None:
+    """Return the OpenAI API key from the environment, or None if unset or blank."""
     load_dotenv()
     value = os.getenv("OPENAI_API_KEY")
     if value is None or not value.strip():

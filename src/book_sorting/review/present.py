@@ -1,3 +1,5 @@
+"""Interactive presentation of copy plans for human review."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -7,6 +9,7 @@ from book_sorting.models.state import WorkflowState
 
 
 def format_review_summary(state: WorkflowState) -> str:
+    """Return a human-readable summary of the copy plan for review."""
     plan = state.copy_plan
     if plan is None:
         return "No copy plan to review."
@@ -41,6 +44,7 @@ def format_review_summary(state: WorkflowState) -> str:
 
 
 def _entries_by_group(plan: CopyPlan) -> dict[str, list[CopyPlanEntry]]:
+    """Group copy plan entries by book group identifier."""
     grouped: dict[str, list[CopyPlanEntry]] = defaultdict(list)
     for entry in plan.entries:
         grouped[entry.group_id].append(entry)
@@ -48,6 +52,7 @@ def _entries_by_group(plan: CopyPlan) -> dict[str, list[CopyPlanEntry]]:
 
 
 def review_entries_interactively(state: WorkflowState) -> None:
+    """Prompt the user to approve or reject each group's copy entries."""
     plan = state.copy_plan
     if plan is None:
         return

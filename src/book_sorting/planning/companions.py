@@ -1,3 +1,5 @@
+"""Companion file discovery for book groups."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,6 +17,7 @@ COMPANION_EXTENSIONS = frozenset(
 
 
 def companion_files_for_group(root_path: Path | None) -> list[Path]:
+    """Return companion files found in the book group's root directory."""
     if root_path is None or not root_path.is_dir():
         return []
 

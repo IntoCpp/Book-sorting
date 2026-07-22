@@ -1,3 +1,5 @@
+"""Tests for Windows extended-length path handling during file copy."""
+
 from __future__ import annotations
 
 import sys
@@ -44,6 +46,13 @@ def _long_bonkers_destination(output_root: Path) -> tuple[Path, Path]:
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows extended paths")
 def test_extended_path_prefix_for_long_destination() -> None:
+    """Verify long paths receive the Windows extended-length prefix.
+
+    Goal: Confirm ``as_extended_path`` prepends ``\\\\?\\`` for paths
+    exceeding normal Windows length limits.
+    Expected result: Extended path string starts with ``\\\\?\\``.
+    On Failure: Extended-path prefix logic changed or is not applied on Windows.
+    """
     destination = Path("C:/") / ("nested/" * 40) / "book.epub"
     extended = as_extended_path(destination)
     assert str(extended).startswith("\\\\?\\")
@@ -51,6 +60,14 @@ def test_extended_path_prefix_for_long_destination() -> None:
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows MAX_PATH limit")
 def test_windows_max_path_copies_with_extended_paths(tmp_path: Path) -> None:
+    """Verify copy succeeds when destination exceeds MAX_PATH on Windows.
+
+    Goal: Confirm ``copy_plan_entry`` copies a file to a bonkers-length
+    destination using extended-path I/O helpers.
+    Expected result: ``copied=True``; destination file exists with correct
+    bytes via ``path_for_io``.
+    On Failure: Extended-path copy support regressed on Windows.
+    """
     source = tmp_path / "book.epub"
     source.write_bytes(b"test")
 
@@ -74,6 +91,15 @@ def test_windows_max_path_copies_with_extended_paths(tmp_path: Path) -> None:
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows MAX_PATH limit")
 def test_bonkers_fixture_epub_copies_when_path_exceeds_max_path() -> None:
+    """Verify real bonkers fixture epub copies to an over-MAX_PATH destination.
+
+    Goal: Integration-style check that a real fixture epub from
+    ``input_test_data`` copies successfully to an extended-length path.
+    Expected result: ``copied=True`` and destination file exists with
+    non-zero size.
+    On Failure: Fixture missing (skipped), extended-path copy broken, or
+    path builder no longer exceeds MAX_PATH threshold.
+    """
     source = Path("input_test_data") / BONKERS_EPUB
     if not source.is_file():
         pytest.skip("Bonkers fixture epub not present in input_test_data")

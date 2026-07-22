@@ -1,3 +1,5 @@
+"""Tests for the output-library scan and book-information CLI."""
+
 from pathlib import Path
 
 import pytest
@@ -30,6 +32,15 @@ def _build_library(output_root: Path) -> None:
 
 
 def test_scan_output_library_finds_books_and_media_kinds(tmp_path: Path) -> None:
+    """Verify scanning discovers books and assigns correct media kinds.
+
+    Goal: Confirm ``scan_output_library`` finds series and standalone books
+    and classifies ebook vs audiobook from file extensions.
+    Expected result: Two books returned with titles ``05 - Dungeon Duel``
+    and ``Dirk Gently``; ebook and audiobook media kinds respectively.
+    On Failure: Library scan path logic, title extraction, or media-kind
+    detection regressed.
+    """
     output_root = tmp_path / "output"
     _build_library(output_root)
 
@@ -44,6 +55,14 @@ def test_scan_output_library_finds_books_and_media_kinds(tmp_path: Path) -> None
 
 
 def test_authors_from_books_is_sorted(tmp_path: Path) -> None:
+    """Verify author list is deduplicated and alphabetically sorted.
+
+    Goal: Confirm ``authors_from_books`` returns a sorted unique author
+    list from scanned library entries.
+    Expected result: ``["Douglas Adams", "James Hunter"]`` in ascending order.
+    On Failure: Sorting or deduplication logic in ``authors_from_books``
+    changed.
+    """
     output_root = tmp_path / "output"
     _build_library(output_root)
 
@@ -53,6 +72,14 @@ def test_authors_from_books_is_sorted(tmp_path: Path) -> None:
 
 
 def test_format_book_line_with_detail(tmp_path: Path) -> None:
+    """Verify detailed book line includes title and relative path.
+
+    Goal: Confirm ``format_book_line`` with ``show_detail=True`` embeds
+    the book title and author/series path segment.
+    Expected result: Line contains the book title and
+    ``James Hunter/The Rogue Dungeon``.
+    On Failure: Detail formatting or path relativization logic changed.
+    """
     output_root = tmp_path / "output"
     _build_library(output_root)
     book = next(
@@ -66,6 +93,15 @@ def test_format_book_line_with_detail(tmp_path: Path) -> None:
 
 
 def test_book_information_cli_writes_summary(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Verify the book-information CLI prints and saves a library summary.
+
+    Goal: Exercise ``book_information.main`` with author, book, detail, and
+    file flags against a small test library.
+    Expected result: Stdout and report file contain config/scan headers,
+    author names, and ``Total books found: 2``.
+    On Failure: CLI argument handling, config loading, or report output
+    formatting regressed.
+    """
     output_root = tmp_path / "output_prod"
     _build_library(output_root)
     config_file = tmp_path / "config.yaml"

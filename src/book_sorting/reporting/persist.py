@@ -1,3 +1,5 @@
+"""Persist run reports to the output folder."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -8,6 +10,7 @@ _SEPARATOR = "=" * 80
 
 
 def report_file_path(output_folder: Path) -> Path:
+    """Return the path to the append-only run report file."""
     return output_folder / RUN_REPORT_FILENAME
 
 
@@ -17,6 +20,7 @@ def append_report_to_file(
     *,
     run_at: datetime | None = None,
 ) -> Path:
+    """Append a timestamped report block to the output folder report file."""
     output_folder.mkdir(parents=True, exist_ok=True)
     report_path = report_file_path(output_folder)
     timestamp = (run_at or datetime.now(UTC)).strftime("%Y-%m-%d %H:%M:%S UTC")

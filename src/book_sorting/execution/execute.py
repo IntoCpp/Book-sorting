@@ -1,3 +1,5 @@
+"""Copy plan execution workflow stage."""
+
 from __future__ import annotations
 
 import logging
@@ -10,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def execute_copy(state: WorkflowState) -> WorkflowState:
+    """Execute approved copy plan entries and record results on ``state``."""
     logger.info("Stage: execute")
     plan = state.copy_plan
     if plan is None:

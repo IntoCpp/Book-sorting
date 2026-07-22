@@ -1,3 +1,5 @@
+"""Tests for AI research sufficiency checks, boundary integration, and workflow stage."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -49,6 +51,13 @@ def _group_with_metadata(**fields: object) -> BookGroup:
 
 
 def test_metadata_is_sufficient_with_nfo_title_author() -> None:
+    """Verify NFO-sourced title and author satisfy metadata sufficiency.
+
+    Goal: Confirm ``metadata_is_sufficient`` returns ``True`` when title and
+    author are present from NFO sources.
+    Expected result: Function returns ``True``.
+    On Failure: Sufficiency criteria for NFO metadata changed.
+    """
     meta = ExtractedMetadata(
         title="Title",
         author="Author",
@@ -59,6 +68,14 @@ def test_metadata_is_sufficient_with_nfo_title_author() -> None:
 
 
 def test_skip_ai_when_nfo_metadata_sufficient(show) -> None:
+    """Verify AI research is skipped when local NFO metadata is sufficient.
+
+    Goal: Confirm ``research_group`` uses local metadata and does not invoke
+    the agent boundary when sufficiency checks pass.
+    Expected result: ``research_skipped`` is ``True``; local title preserved;
+    fake boundary receives zero calls.
+    On Failure: Sufficiency short-circuit or metadata-to-research mapping changed.
+    """
     group = _group_with_metadata(
         title="Local Title",
         author="Local Author",
@@ -80,6 +97,14 @@ def test_skip_ai_when_nfo_metadata_sufficient(show) -> None:
 
 
 def test_calls_ai_when_metadata_incomplete(show) -> None:
+    """Verify AI boundary is invoked when metadata is insufficient.
+
+    Goal: Confirm ``research_group`` calls the agent boundary and returns AI
+    classification when only partial path-derived metadata exists.
+    Expected result: One boundary call; returned author and confidence match
+    fake boundary result.
+    On Failure: AI invocation gate or result mapping changed.
+    """
     group = BookGroup(
         group_id="g1",
         files=[DiscoveredFile(path=Path("x.epub"), media_kind=MediaKind.EBOOK)],
@@ -109,6 +134,13 @@ def test_calls_ai_when_metadata_incomplete(show) -> None:
 
 
 def test_research_stage_attaches_results(tmp_path: Path) -> None:
+    """Verify research results can be attached to groups after pipeline stages.
+
+    Goal: Confirm discover, group, and extract-metadata stages produce groups
+    that accept ``research_group`` results on ``group.research``.
+    Expected result: First book group's ``research`` is not ``None``.
+    On Failure: Upstream stages fail or research attachment contract changed.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     source.mkdir()
@@ -134,6 +166,15 @@ def test_research_stage_attaches_results(tmp_path: Path) -> None:
 
 @pytest.mark.integration
 def test_ai_research_on_input_test_data_book(show) -> None:
+    """Integration test: live AI research on a real input_test_data book.
+
+    Goal: Confirm real ``research_group`` against OpenAI returns title,
+    author, and confidence for a book lacking sufficient local metadata.
+    Expected result: Research not skipped; title, author, and confidence
+    populated on the group.
+    On Failure: API key missing (skipped), no suitable test book (skipped),
+    or live AI integration regressed.
+    """
     if not get_openai_api_key():
         pytest.skip("OPENAI_API_KEY is not set")
 
@@ -190,6 +231,14 @@ def test_ai_research_on_input_test_data_book(show) -> None:
 
 @pytest.mark.integration
 def test_ai_research_poorly_named_file_in_input_test_data(show) -> None:
+    """Integration test: live AI research on an obscurely named test file.
+
+    Goal: Confirm AI research runs for a deliberately poorly named mp3 file
+    placed in ``input_test_data/_pytest_obscure``.
+    Expected result: Group discovered; research not skipped; confidence set.
+    On Failure: Obscure file not discovered, API unavailable (skipped), or AI
+    integration regressed.
+    """
     if not get_openai_api_key():
         pytest.skip("OPENAI_API_KEY is not set")
 

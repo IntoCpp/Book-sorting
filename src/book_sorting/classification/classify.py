@@ -1,3 +1,5 @@
+"""Workflow stage for classifying book groups."""
+
 from __future__ import annotations
 
 import logging
@@ -9,6 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 def classify_books(state: WorkflowState) -> WorkflowState:
+    """Classify every book group in the workflow state.
+
+    Args:
+        state: Current workflow state containing book groups to classify.
+
+    Returns:
+        The same workflow state with ``classification`` populated on each group.
+    """
     logger.info("Stage: classify")
     for group in state.book_groups:
         group.classification = classify_group(group)

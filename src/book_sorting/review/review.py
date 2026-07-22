@@ -1,3 +1,5 @@
+"""Human review workflow stage for copy plans."""
+
 from __future__ import annotations
 
 import logging
@@ -9,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def review_plan(state: WorkflowState) -> WorkflowState:
+    """Approve or reject copy plan entries, interactively when requested."""
     logger.info("Stage: review")
     plan = state.copy_plan
     if plan is None:

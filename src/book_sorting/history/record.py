@@ -1,3 +1,5 @@
+"""Record successful copy operations in processing history."""
+
 from __future__ import annotations
 
 import logging
@@ -13,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def record_history(state: WorkflowState) -> WorkflowState:
+    """Persist successfully copied files to the processing history."""
     logger.info("Stage: record_history")
     history_path = history_file_path(state.config)
     new_entries: list[HistoryEntry] = []

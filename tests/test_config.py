@@ -1,3 +1,5 @@
+"""Tests for configuration loading and OpenAI API key resolution."""
+
 from pathlib import Path
 
 import pytest
@@ -20,6 +22,14 @@ def _write_config_file(config_file: Path, **overrides: str) -> None:
 
 
 def test_load_config_test_mode_resolves_paths(tmp_path: Path) -> None:
+    """Verify test-mode config resolves relative paths to absolute paths.
+
+    Goal: Confirm ``load_config`` with ``test_mode=True`` resolves source,
+    output, and history paths relative to the config file location.
+    Expected result: ``test_mode`` is ``True`` and all folder paths match
+    resolved ``tmp_path`` subdirectories.
+    On Failure: Path resolution logic or test-mode key names changed.
+    """
     source = tmp_path / "input_test_data"
     output = tmp_path / "output_test_data"
     source.mkdir()
@@ -40,6 +50,14 @@ def test_load_config_test_mode_resolves_paths(tmp_path: Path) -> None:
 
 
 def test_load_config_production_mode_resolves_paths(tmp_path: Path) -> None:
+    """Verify production-mode config resolves prod folder paths.
+
+    Goal: Confirm ``load_config`` with ``test_mode=False`` uses production
+    source, output, and history keys.
+    Expected result: ``test_mode`` is ``False`` and prod paths resolve
+    correctly under ``tmp_path``.
+    On Failure: Production config keys or path resolution logic changed.
+    """
     source = tmp_path / "input_prod_data"
     output = tmp_path / "output_prod_data"
     source.mkdir()
@@ -56,6 +74,14 @@ def test_load_config_production_mode_resolves_paths(tmp_path: Path) -> None:
 
 
 def test_load_config_missing_source_raises(tmp_path: Path) -> None:
+    """Verify loading config with a missing source folder raises ConfigError.
+
+    Goal: Confirm ``load_config`` validates that the configured source
+    folder exists before returning an ``AppConfig``.
+    Expected result: ``ConfigError`` raised with message containing
+    ``Source folder does not exist``.
+    On Failure: Source-folder validation was removed or error message changed.
+    """
     config_file = tmp_path / "config.yaml"
     _write_config_file(
         config_file,
@@ -69,6 +95,13 @@ def test_load_config_missing_source_raises(tmp_path: Path) -> None:
 
 
 def test_load_output_folder_prod(tmp_path: Path) -> None:
+    """Verify ``load_output_folder_prod`` returns config and output paths.
+
+    Goal: Confirm the helper loads only the production output folder from a
+    minimal config file.
+    Expected result: Resolved config path and output folder path returned.
+    On Failure: ``load_output_folder_prod`` signature or YAML key changed.
+    """
     output = tmp_path / "output_prod_data"
     output.mkdir()
     config_file = tmp_path / "config.yaml"
@@ -81,11 +114,24 @@ def test_load_output_folder_prod(tmp_path: Path) -> None:
 
 
 def test_get_openai_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify OpenAI API key is read from the environment variable.
+
+    Goal: Confirm ``get_openai_api_key`` returns ``OPENAI_API_KEY`` when set.
+    Expected result: Function returns ``"test-key"`` from the environment.
+    On Failure: Environment variable name or lookup order changed.
+    """
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     assert get_openai_api_key() == "test-key"
 
 
 def test_get_openai_api_key_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify missing OpenAI API key returns None when dotenv finds nothing.
+
+    Goal: Confirm ``get_openai_api_key`` returns ``None`` when the env var
+    is unset and ``load_dotenv`` provides no value.
+    Expected result: Function returns ``None``.
+    On Failure: Fallback lookup via dotenv or file still supplies a key.
+    """
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.setattr(
         "book_sorting.config.load_dotenv",

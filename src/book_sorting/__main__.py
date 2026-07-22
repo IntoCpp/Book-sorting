@@ -1,3 +1,8 @@
+"""Command-line entry point for the Book Sorting Tool.
+
+Parses arguments, loads configuration, and runs the workflow pipeline.
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -11,6 +16,7 @@ from book_sorting.workflow.runner import WorkflowRunner
 
 
 def _configure_logging() -> None:
+    """Configure root logging for CLI output at INFO level."""
     logging.basicConfig(
         level=logging.INFO,
         format="%(levelname)s %(name)s: %(message)s",
@@ -18,6 +24,11 @@ def _configure_logging() -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """Run the Book Sorting Tool from the command line.
+
+    Args:
+        argv: Optional argument list; defaults to ``sys.argv`` when None.
+    """
     _configure_logging()
     parser = argparse.ArgumentParser(description="Book Sorting Tool")
     parser.add_argument(

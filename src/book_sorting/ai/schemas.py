@@ -4,6 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class BookResearchOutput(BaseModel):
+    """Structured output schema for AI book research responses."""
+
     title: str
     author: str
     series: str | None = None

@@ -1,3 +1,5 @@
+"""Tests for copy-plan execution and partial-failure handling."""
+
 from pathlib import Path
 
 from book_sorting.execution.execute import execute_copy
@@ -17,6 +19,14 @@ def _minimal_state(tmp_path: Path) -> WorkflowState:
 
 
 def test_execute_copies_approved_entries(tmp_path: Path, show) -> None:
+    """Verify approved copy-plan entries are copied to destination.
+
+    Goal: Confirm ``execute_copy`` copies file content for entries marked
+    ``approved=True`` and records a successful execution result.
+    Expected result: Destination file exists with matching content; one
+    result with ``copied=True``.
+    On Failure: Copy logic, approval filtering, or result recording changed.
+    """
     state = _minimal_state(tmp_path)
     source_file = state.config.source_folder / "book.epub"
     source_file.write_text("content", encoding="utf-8")
@@ -43,6 +53,14 @@ def test_execute_copies_approved_entries(tmp_path: Path, show) -> None:
 
 
 def test_execute_skips_unapproved_entries(tmp_path: Path) -> None:
+    """Verify unapproved copy-plan entries are skipped without copying.
+
+    Goal: Confirm ``execute_copy`` does not copy files when
+    ``approved=False``.
+    Expected result: Destination does not exist; result has ``skipped=True``
+    and ``copied=False``.
+    On Failure: Approval gate was removed or skip semantics changed.
+    """
     state = _minimal_state(tmp_path)
     source_file = state.config.source_folder / "book.epub"
     source_file.write_text("x", encoding="utf-8")
@@ -67,6 +85,13 @@ def test_execute_skips_unapproved_entries(tmp_path: Path) -> None:
 
 
 def test_execute_leaves_source_unchanged(tmp_path: Path) -> None:
+    """Verify execution does not modify source files after copying.
+
+    Goal: Confirm ``execute_copy`` performs a copy (not move) and preserves
+    original source bytes.
+    Expected result: Source file bytes are identical before and after execution.
+    On Failure: Execution performs move/truncate or re-encodes source files.
+    """
     state = _minimal_state(tmp_path)
     source_file = state.config.source_folder / "book.epub"
     before = b"\x00\x01\x02"
@@ -90,6 +115,14 @@ def test_execute_leaves_source_unchanged(tmp_path: Path) -> None:
 
 
 def test_execute_reports_partial_failure(tmp_path: Path, show) -> None:
+    """Verify execution continues after a failure and reports per-entry outcomes.
+
+    Goal: Confirm ``execute_copy`` copies successful entries even when another
+    entry references a missing source file.
+    Expected result: Good file copied; bad entry has ``copied=False`` and a
+    non-empty ``error``; failed destination not created.
+    On Failure: All-or-nothing execution or error reporting regressed.
+    """
     state = _minimal_state(tmp_path)
     good_source = state.config.source_folder / "good.epub"
     good_source.write_text("ok", encoding="utf-8")

@@ -1,3 +1,5 @@
+"""Scan and format books from the organized output library."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -11,6 +13,8 @@ STANDALONE_SERIES_NAME = "Standalone"
 
 @dataclass(frozen=True)
 class LibraryBook:
+    """A book entry discovered in the organized output library."""
+
     author: str
     series: str
     title: str
@@ -19,6 +23,7 @@ class LibraryBook:
 
 
 def _classify_book_folder(book_dir: Path) -> MediaKind | None:
+    """Infer the dominant media kind contained in a book directory."""
     has_ebook = False
     has_audiobook = False
     for file_path in book_dir.rglob("*"):
@@ -37,6 +42,7 @@ def _classify_book_folder(book_dir: Path) -> MediaKind | None:
 
 
 def scan_output_library(output_root: Path) -> list[LibraryBook]:
+    """Scan the output library and return one entry per book directory."""
     books: list[LibraryBook] = []
     if not output_root.is_dir():
         return books
@@ -63,10 +69,12 @@ def scan_output_library(output_root: Path) -> list[LibraryBook]:
 
 
 def authors_from_books(books: list[LibraryBook]) -> list[str]:
+    """Return a case-insensitive sorted list of unique author names."""
     return sorted({book.author for book in books}, key=str.lower)
 
 
 def format_book_line(book: LibraryBook, *, output_root: Path, show_detail: bool) -> str:
+    """Format a book title, optionally including its path relative to ``output_root``."""
     if show_detail:
         relative = book.path.relative_to(output_root.resolve())
         return f"{book.title} ({relative.as_posix()})"

@@ -1,3 +1,5 @@
+"""Tests for file grouping rules and the group-files workflow stage."""
+
 from pathlib import Path
 
 from conftest import make_app_config
@@ -16,6 +18,14 @@ def test_multi_file_audiobook_in_subdirectory_is_one_group(
     tmp_path: Path,
     show,
 ) -> None:
+    """Verify multiple audio files in one folder form a single book group.
+
+    Goal: Confirm ``build_book_groups`` groups all mp3 parts in a
+    subdirectory into one group with the folder as root path.
+    Expected result: One group containing three files with
+    ``root_path`` equal to the book directory.
+    On Failure: Subdirectory grouping rule or root-path assignment changed.
+    """
     source = tmp_path / "source"
     book_dir = source / "Some Audiobook"
     book_dir.mkdir(parents=True)
@@ -39,6 +49,14 @@ def test_multi_file_audiobook_in_subdirectory_is_one_group(
 
 
 def test_single_file_at_source_root_is_own_group(tmp_path: Path) -> None:
+    """Verify a lone file at the source root becomes its own group.
+
+    Goal: Confirm a single root-level ebook file is grouped alone with
+    ``root_path`` set to the source folder.
+    Expected result: One group with one file and ``root_path`` equal to
+    source root.
+    On Failure: Root-level single-file grouping logic changed.
+    """
     source = tmp_path / "source"
     source.mkdir()
     epub = source / "standalone.epub"
@@ -53,6 +71,13 @@ def test_single_file_at_source_root_is_own_group(tmp_path: Path) -> None:
 
 
 def test_multiple_root_level_files_are_separate_groups(tmp_path: Path) -> None:
+    """Verify multiple root-level files each become separate groups.
+
+    Goal: Confirm two ebooks at the source root are not merged into one
+    group.
+    Expected result: Two groups, each containing exactly one file.
+    On Failure: Root-level files are incorrectly merged.
+    """
     source = tmp_path / "source"
     source.mkdir()
     a = source / "a.epub"
@@ -71,6 +96,13 @@ def test_multiple_root_level_files_are_separate_groups(tmp_path: Path) -> None:
 
 
 def test_separate_subdirectories_are_separate_groups(tmp_path: Path) -> None:
+    """Verify files in different subdirectories form distinct groups.
+
+    Goal: Confirm audiobook files in sibling folders are grouped
+    independently.
+    Expected result: Two groups, one per subdirectory.
+    On Failure: Cross-directory grouping or subdirectory isolation changed.
+    """
     source = tmp_path / "source"
     dir_a = source / "Book A"
     dir_b = source / "Book B"
@@ -89,6 +121,13 @@ def test_separate_subdirectories_are_separate_groups(tmp_path: Path) -> None:
 
 
 def test_group_files_stage_updates_state(tmp_path: Path) -> None:
+    """Verify the group-files workflow stage populates book_groups on state.
+
+    Goal: Confirm ``group_files`` converts discovered files into grouped
+    book groups on the workflow state.
+    Expected result: State has one group containing two mp3 files.
+    On Failure: Group-files stage no longer updates state or grouping fails.
+    """
     source = tmp_path / "source"
     output = tmp_path / "output"
     book_dir = source / "Chapters"

@@ -1,3 +1,5 @@
+"""Exclude previously processed files from discovery."""
+
 from __future__ import annotations
 
 import logging
@@ -9,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def exclude_processed(state: WorkflowState) -> WorkflowState:
+    """Remove discovered files that appear in the processing history."""
     logger.info("Stage: exclude_processed")
     history_path = history_file_path(state.config)
     processed_sources = load_processed_sources(history_path)

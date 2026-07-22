@@ -1,3 +1,5 @@
+"""Copy plan generation workflow stage."""
+
 from __future__ import annotations
 
 import json
@@ -10,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_copy_plan(state: WorkflowState) -> WorkflowState:
+    """Build a copy plan from classified groups and attach it to ``state``."""
     logger.info("Stage: copy_plan")
     state.copy_plan = build_copy_plan_for_groups(
         state.book_groups,
