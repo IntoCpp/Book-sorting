@@ -98,6 +98,11 @@ For example:
 
 `uv run pytest`
 
+## Utilities
+
+| Command | Description |
+|---------|-------------|
+| `uv run book-information` | List authors and books from the production output library folder. |
 
 ## Testing
 
@@ -118,6 +123,7 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-07-22** — Added `book-information` utility to list authors and books from the production output folder.
 - **2026-07-21** — Added `--test` mode and separate test/production paths and processing history in `config.yaml`.
 - **2026-07-21** — Run reports are appended to `run-report.txt` in the output folder to keep a history of each run.
 - **2026-07-21** — Windows file copies use extended-length paths when destinations exceed the usual `MAX_PATH` limit.

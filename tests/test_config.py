@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from book_sorting.config import ConfigError, get_openai_api_key, load_config
+from book_sorting.config import ConfigError, get_openai_api_key, load_config, load_output_folder_prod
 
 
 def _write_config_file(config_file: Path, **overrides: str) -> None:
@@ -66,6 +66,18 @@ def test_load_config_missing_source_raises(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigError, match="Source folder does not exist"):
         load_config(config_file, test_mode=True)
+
+
+def test_load_output_folder_prod(tmp_path: Path) -> None:
+    output = tmp_path / "output_prod_data"
+    output.mkdir()
+    config_file = tmp_path / "config.yaml"
+    config_file.write_text("output_folder_prod: ./output_prod_data\n", encoding="utf-8")
+
+    config_path, output_folder = load_output_folder_prod(config_file)
+
+    assert config_path == config_file.resolve()
+    assert output_folder == output.resolve()
 
 
 def test_get_openai_api_key_from_env(monkeypatch: pytest.MonkeyPatch) -> None:

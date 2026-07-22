@@ -36,6 +36,26 @@ def _required_config_value(data: dict, *, test_mode: bool, test_key: str, prod_k
     return str(value)
 
 
+def load_output_folder_prod(config_path: Path | None = None) -> tuple[Path, Path]:
+    """Return the config file path and resolved production output folder."""
+    path = (config_path or Path("config.yaml")).resolve()
+    if not path.is_file():
+        raise ConfigError(f"Config file not found: {path}")
+
+    with path.open(encoding="utf-8") as handle:
+        data = yaml.safe_load(handle) or {}
+
+    output = data.get("output_folder_prod")
+    if not output:
+        raise ConfigError("config.yaml must define output_folder_prod")
+
+    output_folder = _resolve_path(path.parent, str(output))
+    if not output_folder.is_dir():
+        raise ConfigError(f"Output folder does not exist: {output_folder}")
+
+    return path, output_folder
+
+
 def load_config(config_path: Path | None = None, *, test_mode: bool = False) -> AppConfig:
     path = (config_path or Path("config.yaml")).resolve()
     if not path.is_file():
