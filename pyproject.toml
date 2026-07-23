@@ -18,6 +18,7 @@ dependencies = [
 [project.scripts]
 book-sort = "book_sorting.__main__:main"
 book-information = "book_sorting.book_information:main"
+create-book-collection = "book_sorting.create_book_collection:main"
 
 [build-system]
 requires = ["uv_build>=0.11.8,<0.12.0"]

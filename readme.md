@@ -162,9 +162,10 @@ For example:
 ## Utilities
 
 
-| Command                   | Description                                                       |
-| ------------------------- | ----------------------------------------------------------------- |
-| `uv run book-information` | List authors and books from the production output library folder. |
+| Command                          | Description                                                       |
+| -------------------------------- | ----------------------------------------------------------------- |
+| `uv run book-information`        | List authors and books from the production output library folder. |
+| `uv run create-book-collection`  | Generate `my_books.html`, an HTML catalog of the sorted library.  |
 
 
 
@@ -190,6 +191,7 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-07-23** — Added `create-book-collection` utility to generate a self-contained HTML catalog (`my_books.html`) from the sorted output library.
 - **2026-07-23** — AI-assisted research caches retrieved metadata in output-library `.nfo` files after successful copy; the source folder is never modified.
 - **2026-07-22** — Added `book-information` utility to list authors and books from the production output folder.
 - **2026-07-21** — Added `--test` mode and separate test/production paths and processing history in `config.yaml`.

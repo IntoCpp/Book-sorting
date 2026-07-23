@@ -31,6 +31,11 @@ _KEY_VALUE_LABELS = {
     "research_summary": "Research Summary",
 }
 
+_BOOK_DESCRIPTION_SECTION = re.compile(
+    r"^Book Description\s*\r?\n=+\s*\r?\n(?P<body>.*?)(?:\r?\n\r?\n|\Z)",
+    re.IGNORECASE | re.DOTALL | re.MULTILINE,
+)
+
 
 def find_nfo_file(directory: Path) -> Path | None:
     """Locate the first ``.nfo`` file in a directory.
@@ -148,6 +153,63 @@ def load_nfo_from_directory(directory: Path) -> dict[str, str]:
     if parsed:
         parsed["_nfo_path"] = str(nfo_path)
     return parsed
+
+
+def extract_description_from_nfo_text(content: str) -> str | None:
+    """Extract a book description from NFO text when present.
+
+    Checks structured metadata fields first, then the free-form
+    ``Book Description`` section used by some libraries.
+    """
+    fields = parse_nfo_text(content)
+    description = fields.get("description")
+    if description:
+        return description
+
+    match = _BOOK_DESCRIPTION_SECTION.search(content)
+    if match is None:
+        return None
+    body = match.group("body").strip()
+    return body or None
+
+
+def load_description_from_directory(directory: Path) -> str | None:
+    """Load a book description from the NFO file in a directory, if present."""
+    nfo_path = find_nfo_file(directory)
+    if nfo_path is None:
+        return None
+    try:
+        content = nfo_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
+    return extract_description_from_nfo_text(content)
+
+
+def write_nfo_description(directory: Path, description: str) -> bool:
+    """Create or update an NFO description without changing unrelated content."""
+    text = description.strip()
+    if not text or not directory.is_dir():
+        return False
+
+    nfo_path = find_nfo_file(directory) or (directory / _DEFAULT_NFO_FILENAME)
+    existing_content = (
+        nfo_path.read_text(encoding="utf-8", errors="replace")
+        if nfo_path.is_file()
+        else None
+    )
+
+    if existing_content and _BOOK_DESCRIPTION_SECTION.search(existing_content):
+        merged = _replace_book_description_section(existing_content, text)
+    else:
+        merged = merge_nfo_content(existing_content, {"description": text})
+
+    if not merged:
+        return False
+    if existing_content is not None and _normalize_nfo_text(existing_content) == _normalize_nfo_text(merged):
+        return False
+
+    nfo_path.write_text(merged, encoding="utf-8")
+    return True
 
 
 def classification_to_nfo_fields(classification: Classification) -> dict[str, str]:
@@ -338,3 +400,11 @@ def _merge_nfo_key_value(content: str, updates: dict[str, str]) -> str:
     if content.endswith("\n"):
         text += "\n"
     return text
+
+
+def _replace_book_description_section(content: str, description: str) -> str:
+    replacement = f"Book Description\n================\n{description.strip()}\n"
+    if _BOOK_DESCRIPTION_SECTION.search(content):
+        return _BOOK_DESCRIPTION_SECTION.sub(replacement, content, count=1)
+    separator = "\n\n" if content.endswith("\n") else "\n\n"
+    return content.rstrip() + separator + replacement

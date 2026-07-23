@@ -12,3 +12,9 @@ class BookResearchOutput(BaseModel):
     series_order: int | None = None
     confidence: float = Field(ge=0.0, le=1.0)
     research_summary: str | None = None
+
+
+class BookDescriptionOutput(BaseModel):
+    """Structured output schema for AI-generated catalog descriptions."""
+
+    description: str

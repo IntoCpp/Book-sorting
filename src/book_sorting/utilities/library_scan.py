@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,6 +10,8 @@ from book_sorting.discovery.media_types import classify_media_path
 from book_sorting.models.domain import MediaKind
 
 STANDALONE_SERIES_NAME = "Standalone"
+
+_SERIES_ORDER_PREFIX = re.compile(r"^(\d+)\s*-\s*.+$")
 
 
 @dataclass(frozen=True)
@@ -20,6 +23,65 @@ class LibraryBook:
     title: str
     path: Path
     media_kind: MediaKind | None
+
+
+def parse_series_order_from_title(title: str) -> int | None:
+    """Parse a leading series-order prefix from a book folder name."""
+    match = _SERIES_ORDER_PREFIX.match(title.strip())
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def display_series_name(series: str) -> str | None:
+    """Return the series name for display, or ``None`` for standalone books."""
+    if series == STANDALONE_SERIES_NAME:
+        return None
+    return series
+
+
+def media_kinds_in_book_folder(book_dir: Path) -> frozenset[MediaKind]:
+    """Return the media kinds found in a book directory's top-level files."""
+    kinds: set[MediaKind] = set()
+    if not book_dir.is_dir():
+        return frozenset()
+    for file_path in book_dir.iterdir():
+        if not file_path.is_file():
+            continue
+        media_kind = classify_media_path(file_path)
+        if media_kind is not None:
+            kinds.add(media_kind)
+    return frozenset(kinds)
+
+
+def format_media_label(kinds: frozenset[MediaKind]) -> str:
+    """Format a human-readable media label for a set of media kinds."""
+    has_audiobook = MediaKind.AUDIOBOOK in kinds
+    has_ebook = MediaKind.EBOOK in kinds
+    if has_audiobook and has_ebook:
+        return "Audio + E-book"
+    if has_audiobook:
+        return "Audio"
+    if has_ebook:
+        return "E-book"
+    return ""
+
+
+def book_sort_key(book: LibraryBook) -> tuple[str, int, str]:
+    """Return a sort key for books ordered by series, order, and title."""
+    series_name = display_series_name(book.series) or ""
+    series_order = parse_series_order_from_title(book.title)
+    return (
+        series_name.casefold(),
+        series_order if series_order is not None else 10_000,
+        book.title.casefold(),
+    )
+
+
+def books_for_author(books: list[LibraryBook], author: str) -> list[LibraryBook]:
+    """Return books for an author sorted by series, order, and title."""
+    filtered = [book for book in books if book.author == author]
+    return sorted(filtered, key=book_sort_key)
 
 
 def _classify_book_folder(book_dir: Path) -> MediaKind | None:
