@@ -7,6 +7,7 @@ import logging
 from book_sorting.execution.copy_files import copy_plan_entry
 from book_sorting.models.domain import CopyOperationResult
 from book_sorting.models.state import WorkflowState
+from book_sorting.research.nfo_cache import cache_research_for_copied_groups
 
 logger = logging.getLogger(__name__)
 
@@ -53,4 +54,5 @@ def execute_copy(state: WorkflowState) -> WorkflowState:
         )
 
     state.execution_results = results
+    cache_research_for_copied_groups(state)
     return state

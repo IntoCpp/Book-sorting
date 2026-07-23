@@ -17,12 +17,13 @@ My workflow was as follows:
 1. I wrote the initial requirements myself.
 2. I used ChatGPT to review and refine the requirements and to produce a `design.md` document containing a detailed implementation plan. I also created a minimal `README.md`.
 3. After saving the project files, I asked Cursor to analyze the project.
-
-   * I quickly learned that Cursor generally expects a dedicated *work plan* document. Instead, I instructed it to use `design.md` as the authoritative implementation plan.
-   * I also discovered Cursor Rules. I created project-specific rules describing the development workflow, specifying that this project was intended to learn Cursor, requiring the use of `uv`, asking Cursor to explain implementation decisions, and defining what should be included in the completion reports after each implementation step.
+  - I quickly learned that Cursor generally expects a dedicated *work plan* document. Instead, I instructed it to use `design.md` as the authoritative implementation plan.
+  - I also discovered Cursor Rules. I created project-specific rules describing the development workflow, specifying that this project was intended to learn Cursor, requiring the use of `uv`, asking Cursor to explain implementation decisions, and defining what should be included in the completion reports after each implementation step.
 4. I asked Cursor to implement the project one step at a time, reviewing every change before moving to the next step.
 5. Once development was complete, I tested the application and it worked as expected.
 6. Finally, I implemented several small improvements and utility features, which are documented in the project history.
+
+
 
 ### Overall Impression
 
@@ -40,41 +41,40 @@ Although this is a relatively small project, I had expected the cost to be somew
 
 ### What I Liked
 
-* At the beginning, I carefully reviewed every report and every line of generated code. As my confidence in Cursor increased, my reviews became much faster, eventually focusing primarily on the implementation reports and the unit test results.
-* Because I emphasized testing from the start, Cursor consistently created and maintained unit tests throughout the project.
-* Cursor automatically executed the test suite after each implementation step. Early in the project, a couple of regressions were introduced, but Cursor immediately detected the failures, fixed the issues, and reran the tests before considering the step complete.
-* I appreciated that simple requests such as **"Push the changes"** resulted in a sensible Git workflow, committing and pushing the appropriate files without additional instructions.
+- At the beginning, I carefully reviewed every report and every line of generated code. As my confidence in Cursor increased, my reviews became much faster, eventually focusing primarily on the implementation reports and the unit test results.
+- Because I emphasized testing from the start, Cursor consistently created and maintained unit tests throughout the project.
+- Cursor automatically executed the test suite after each implementation step. Early in the project, a couple of regressions were introduced, but Cursor immediately detected the failures, fixed the issues, and reran the tests before considering the step complete.
+- I appreciated that simple requests such as **"Push the changes"** resulted in a sensible Git workflow, committing and pushing the appropriate files without additional instructions.
 
 ### What I Would Do Differently Next Time
 
 If I were starting another project with Cursor, I would improve my project rules from the beginning.
 
-* Define clear standards for docstrings and code comments, including where they should be used and the expected level of detail. I ended up adding proper documentation near the end of the project.
-* Add more detailed testing guidelines, including expectations for happy-path tests, edge cases, invalid input, boundary conditions, and regression tests.
-* Establish stronger rules for logging and user feedback. I prefer applications that provide detailed diagnostic information in a dedicated test or debug mode, which makes troubleshooting significantly easier.
-* Experiment with specialized Cursor agents for different responsibilities (such as implementation, testing, documentation, and code review). This project was too small to fully explore that capability.
+- Define clear standards for docstrings and code comments, including where they should be used and the expected level of detail. I ended up adding proper documentation near the end of the project.
+- Add more detailed testing guidelines, including expectations for happy-path tests, edge cases, invalid input, boundary conditions, and regression tests.
+- Establish stronger rules for logging and user feedback. I prefer applications that provide detailed diagnostic information in a dedicated test or debug mode, which makes troubleshooting significantly easier.
+- Experiment with specialized Cursor agents for different responsibilities (such as implementation, testing, documentation, and code review). This project was too small to fully explore that capability.
 
-
-
-
-
-
-
-
+> ### What I Did Not Like
+>
+> - Now that the project is complete, I find the resulting code somewhat more complex than I would have written myself. Developing it manually would almost certainly have taken **5 to 10 times longer**, but I suspect my implementation would have been more compact, with fewer folders, files, and functions. On the other hand, Cursor produced code that follows **Clean Code** principles, with excellent separation of responsibilities and small components that each do one thing well. It is something I always try to do, I can certainly appreciate its maintainability.
+> - I still found myself keeping VS Code open alongside Cursor for occasional file editing and code comparisons. Old habits die hard, I guess.
 
 ## Configuration
 
-Input and output folders are set in a project YAML config file: [`config.yaml`](./config.yaml).
+Input and output folders are set in a project YAML config file: `[config.yaml](./config.yaml)`.
 
 Use `uv run book-sort --test` for test mode (`source_folder_test`, `output_folder_test`). Omit `--test` for production paths.
 
-| Setting | Test mode (`--test`) | Production |
-|---------|----------------------|------------|
-| Source | `source_folder_test` | `source_folder_prod` |
-| Output | `output_folder_test` | `output_folder_prod` |
+
+| Setting            | Test mode (`--test`)      | Production                |
+| ------------------ | ------------------------- | ------------------------- |
+| Source             | `source_folder_test`      | `source_folder_prod`      |
+| Output             | `output_folder_test`      | `output_folder_prod`      |
 | Processing history | `processing_history_test` | `processing_history_prod` |
 
-Copy [`.env.example`](./.env.example) to `.env` and set your OpenAI API key. The application uses the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) as its AI runtime.
+
+Copy `[.env.example](./.env.example)` to `.env` and set your OpenAI API key. The application uses the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) as its AI runtime.
 
 ## Folder Structure
 
@@ -93,6 +93,8 @@ Author/
         Book Title/
             ...
 ```
+
+
 
 ## Workflow
 
@@ -132,11 +134,13 @@ Implementation details are described in [design.md](./design.md).
 
 Book identification may use:
 
-* File and directory names
-* File metadata and audio tags
-* **`.nfo` files** — some source folders contain a text file with the `.nfo` extension that provides an extensive description of the book or series. When present, this local description is preferred and web search is not required.
-* Web research (when local information is insufficient)
-* Processing history from previous runs
+- File and directory names
+- File metadata and audio tags
+- `.nfo` **files** — some source folders contain a text file with the `.nfo` extension that provides an extensive description of the book or series. When present, this local description is preferred and web search is not required. The source folder is never modified; when AI research retrieves metadata, it is cached into an `.nfo` file in the output library after a successful copy.
+- Web research (when local information is insufficient)
+- Processing history from previous runs
+
+
 
 ## Agent-Reusable Tools
 
@@ -144,13 +148,12 @@ Where it makes sense, functionality is implemented as discrete, reusable tools (
 
 When an external capability is available — via MCP or another integration — the project uses that tool rather than reimplementing it.
 
-
 ## Python Environment and Execution
 
-* Python dependencies and the project environment are managed using uv.
-* The project must be executed using uv run.
-* Tests must be run using uv run.
-* Do not introduce pip, venv, or alternative environment-management workflows unless explicitly requested.
+- Python dependencies and the project environment are managed using uv.
+- The project must be executed using uv run.
+- Tests must be run using uv run.
+- Do not introduce pip, venv, or alternative environment-management workflows unless explicitly requested.
 
 For example:
 
@@ -158,9 +161,13 @@ For example:
 
 ## Utilities
 
-| Command | Description |
-|---------|-------------|
+
+| Command                   | Description                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
 | `uv run book-information` | List authors and books from the production output library folder. |
+
+
+
 
 ## Testing
 
@@ -170,18 +177,22 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## Goals
 
-* Support e-books and audiobooks.
-* Work with badly named files whenever possible.
-* Use AI and web research to determine author, series, and title.
-* Avoid moving files when confidence is too low.
-* Produce deterministic and repeatable results.
-* Allow manual review before applying changes.
-* Save files sorted to avoid duplicate work on future run.
-* Generate a report describing all actions performed.
+- Support e-books and audiobooks.
+- Work with badly named files whenever possible.
+- Use AI and web research to determine author, series, and title.
+- Avoid moving files when confidence is too low.
+- Produce deterministic and repeatable results.
+- Allow manual review before applying changes.
+- Save files sorted to avoid duplicate work on future run.
+- Generate a report describing all actions performed.
+
+
 
 ## History
 
+- **2026-07-23** — AI-assisted research caches retrieved metadata in output-library `.nfo` files after successful copy; the source folder is never modified.
 - **2026-07-22** — Added `book-information` utility to list authors and books from the production output folder.
 - **2026-07-21** — Added `--test` mode and separate test/production paths and processing history in `config.yaml`.
 - **2026-07-21** — Run reports are appended to `run-report.txt` in the output folder to keep a history of each run.
 - **2026-07-21** — Windows file copies use extended-length paths when destinations exceed the usual `MAX_PATH` limit.
+

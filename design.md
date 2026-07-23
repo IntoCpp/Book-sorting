@@ -607,3 +607,28 @@ Once all stages are implemented:
 4. Confirm the organized library appears under `./output_test_data`.
 5. Run the workflow again and confirm previously sorted files are skipped.
 6. Read the generated report and confirm it matches the actions taken.
+
+---
+
+## Design Updates
+
+Completed design steps above are preserved for traceability. The following
+records post-implementation clarifications and enhancements.
+
+### 2026-07-23 — Source directory immutability and NFO metadata cache
+
+The source directory contains live files used by another system. **No workflow
+stage may create, modify, or delete files in the source directory.**
+
+This rule was stated for the discovery stage (Step 2) and applies to every
+stage, including metadata extraction, AI-assisted research, and execution.
+
+When AI-assisted research (Step 5) retrieves book metadata, that information
+is cached by writing or updating an `.nfo` file in the **output library** —
+in the book's destination folder under the configured output path. The cache
+is written during the execution stage (Step 8), after files are successfully
+copied, so the organized library becomes the canonical metadata store for
+downstream utilities (for example, an HTML catalog generator).
+
+Source-side `.nfo` files may still be **read** as input metadata when present.
+They are never modified by this application.
