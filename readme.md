@@ -4,6 +4,21 @@ Sort mixed collections of e-books and audiobooks into a structured library using
 
 The tool scans a source folder, gathers information from filenames and file metadata, optionally performs web research, and builds a copy plan that organizes the files into a consistent directory structure.
 
+## Quick usage reference
+
+This assume `config.yaml` is ready. All script have a "-h" option for help.
+Typically, run `book-sort` then `create-book-collection` to refresh the list.
+
+Run the book sorting tool:
+`> uv run book-sort`
+
+Run the utility to create an HTML with all authors and books:
+`> uv run create-book-collection --input "D:\Books\Sorted"`
+
+Run the utility to list all authors and books:
+`> uv run book-information -ab`
+
+
 ## Developing This Project with Cursor
 
 I used this project as an opportunity to learn and evaluate **Cursor**, the AI-powered code editor. 
