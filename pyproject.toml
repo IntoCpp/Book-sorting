@@ -1,0 +1,37 @@
+[project]
+name = "book-sorting"
+version = "0.1.0"
+description = "Sort e-books and audiobooks into a structured library using AI-assisted metadata."
+readme = "readme.md"
+authors = [
+    { name = "Yan-Eric", email = "yan.eric.mobile@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "ebooklib>=0.20",
+    "mutagen>=1.48.1",
+    "openai-agents>=0.18.3",
+    "python-dotenv>=1.2.2",
+    "pyyaml>=6.0.3",
+]
+
+[project.scripts]
+book-sort = "book_sorting.__main__:main"
+book-information = "book_sorting.book_information:main"
+create-book-collection = "book_sorting.create_book_collection:main"
+
+[build-system]
+requires = ["uv_build>=0.11.8,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: tests that call live external AI services",
+]
+addopts = "-m 'not integration'"
