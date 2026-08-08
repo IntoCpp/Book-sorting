@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from book_sorting.create_book_collection import main, resolve_input_folder
+from book_sorting.create_book_collection import main, print_run_configuration, resolve_input_folder
 from book_sorting.metadata.nfo import (
     extract_description_from_nfo_text,
     load_description_from_directory,
@@ -15,13 +15,29 @@ from book_sorting.metadata.nfo import (
 from book_sorting.models.domain import MediaKind
 from book_sorting.utilities.collection_data import build_book_collection
 from book_sorting.utilities.collection_html import render_book_collection_html
-from book_sorting.utilities.cover_images import cover_to_data_uri, find_cover_image
+from book_sorting.utilities.cover_images import cover_to_data_uri, find_cover_image, resolve_cover_data_uri
 from book_sorting.utilities.library_scan import (
     books_for_author,
     format_media_label,
     parse_series_order_from_title,
     scan_output_library,
 )
+
+
+class FakeCoverProvider:
+    def __init__(self, image_url: str = "https://example.com/cover.jpg") -> None:
+        self._image_url = image_url
+        self.calls: list[tuple[str, str, str | None]] = []
+
+    def fetch_cover_image_url(
+        self,
+        *,
+        author: str,
+        title: str,
+        series: str | None,
+    ) -> str | None:
+        self.calls.append((author, title, series))
+        return self._image_url
 
 
 class FakeDescriptionProvider:
@@ -149,6 +165,34 @@ def test_cover_to_data_uri(tmp_path: Path) -> None:
     assert data_uri.startswith("data:image/jpeg;base64,")
 
 
+def test_resolve_cover_data_uri_fetches_and_saves_cover(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    book_dir = tmp_path / "book"
+    book_dir.mkdir()
+    provider = FakeCoverProvider()
+
+    monkeypatch.setattr(
+        "book_sorting.utilities.cover_images.fetch_image_bytes",
+        lambda url: _MINIMAL_JPEG,
+    )
+
+    data_uri = resolve_cover_data_uri(
+        book_dir,
+        author="James Hunter",
+        title="05 - Dungeon Duel",
+        series="The Rogue Dungeon",
+        fetch_online=True,
+        save_downloaded=True,
+        cover_provider=provider,
+    )
+
+    assert data_uri is not None
+    assert (book_dir / "cover.jpg").is_file()
+    assert provider.calls == [("James Hunter", "05 - Dungeon Duel", "The Rogue Dungeon")]
+
+
 def test_build_book_collection_uses_nfo_description_without_ai(tmp_path: Path) -> None:
     output_root = tmp_path / "output"
     _build_library(output_root)
@@ -158,6 +202,7 @@ def test_build_book_collection_uses_nfo_description_without_ai(tmp_path: Path) -
         output_root,
         fetch_descriptions=True,
         update_nfo=True,
+        fetch_covers_online=False,
         description_provider=provider,
     )
 
@@ -179,6 +224,7 @@ def test_build_book_collection_fetches_and_writes_description(tmp_path: Path) ->
         output_root,
         fetch_descriptions=True,
         update_nfo=True,
+        fetch_covers_online=False,
         description_provider=provider,
     )
 
@@ -197,6 +243,7 @@ def test_build_book_collection_no_desc_skips_ai_and_nfo_write(tmp_path: Path) ->
         output_root,
         fetch_descriptions=False,
         update_nfo=False,
+        fetch_covers_online=False,
         description_provider=provider,
     )
 
@@ -212,6 +259,7 @@ def test_render_book_collection_html_contains_expected_sections(tmp_path: Path) 
         output_root,
         fetch_descriptions=False,
         update_nfo=False,
+        fetch_covers_online=False,
         description_provider=FakeDescriptionProvider(),
     )
 
@@ -226,6 +274,44 @@ def test_render_book_collection_html_contains_expected_sections(tmp_path: Path) 
     assert "Existing series description." in html_text
     assert "Audio + E-book" in html_text
     assert "data:image/jpeg;base64," not in html_text
+
+
+def test_create_book_collection_cli_prints_settings(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    output_root = tmp_path / "output"
+    _build_library(output_root)
+    html_path = tmp_path / "catalog.html"
+
+    main(["--input", str(output_root), "--output", str(html_path), "--no-desc", "--no-cover-fetch"])
+
+    captured = capsys.readouterr().out
+    assert "create-book-collection settings:" in captured
+    assert f"--input          {output_root.resolve()}" in captured
+    assert f"--output         {html_path.resolve()}" in captured
+    assert "--no-desc        enabled" in captured
+    assert "--no-cover-fetch enabled" in captured
+    assert "[command line]" in captured
+
+
+def test_print_run_configuration_shows_default_output(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    output_path = tmp_path / "my_books.html"
+    input_root = tmp_path / "library"
+    input_root.mkdir()
+
+    print_run_configuration(
+        argv=None,
+        input_root=input_root,
+        output_path=output_path,
+        test_mode=False,
+        input_folder=input_root,
+        fetch_descriptions=True,
+        fetch_covers_online=True,
+        descriptions_use_ai=False,
+    )
+
+    captured = capsys.readouterr().out
+    assert f"--output         {output_path}" in captured
+    assert "[default (my_books.html)]" in captured
+    assert "OPENAI_API_KEY is not set" in captured
 
 
 def test_create_book_collection_cli_generates_html(tmp_path: Path) -> None:
