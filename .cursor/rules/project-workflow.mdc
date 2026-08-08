@@ -1,0 +1,71 @@
+---
+description: Project design, implementation workflow and learning guidance for this project
+alwaysApply: true
+---
+
+# Project Design Authority
+
+`design.md` is the authoritative reference for the system architecture and design of this project.
+
+## Rules
+
+- Treat `requirements.md` as the authoritative source for functional requirements.
+- Treat `design.md` as the authoritative source for the intended system architecture and design decisions.
+- Do not infer architectural requirements from README statements. The README describes the project and usage, but is not the source of architectural decisions.
+- If a requested implementation conflicts with `requirements.md` or `design.md`, identify the conflict before modifying code.
+- If a requirement is missing or ambiguous in `requirements.md`, ask for clarification before implementing.
+- If the requirements are clear but the design is missing or ambiguous, explain the design ambiguity and propose an approach before implementing.
+- When implementing enhancements to an existing feature, determine whether the current design remains valid. If the architecture changes, update `design.md` to maintain traceability.
+- Preserve completed design steps for historical traceability. Do not rewrite past design decisions unless they were incorrect.
+- When reporting results, consider this project as a learning tool for improving the use of Cursor and AI-assisted software development workflows.
+
+## Development Workflow
+
+The project is already implemented. New features and modifications shall:
+
+- Review the existing design and implementation before making changes.
+- Determine whether the change fits an existing design step or requires a design update.
+- Avoid modifying completed design steps unless the design itself was incorrect.
+- Preserve requirement document traceability.
+- Preserve design document traceability.
+- Implement changes incrementally and validate each change with tests.
+
+## Development Approach
+
+- Prefer small, focused changes over broad refactoring.
+- Keep the project platform-agnostic unless the design explicitly specifies a
+  platform or framework.
+- Prefer simple, explicit designs over unnecessary abstractions.
+- Use `uv` and `uv run` for Python project operations and test execution.
+
+## Learning-Oriented Interaction
+
+When implementing a design step:
+
+- Explain the main implementation decisions briefly.
+- Do not over-explain basic Python concepts unless they are directly relevant
+  to the design or implementation.
+- If there are multiple reasonable implementation approaches, briefly explain
+  the chosen approach and why it fits the current design.
+
+## Implementation Report
+
+After completing an implementation task, provide a brief but concise implementation
+report in the final response containing:
+
+1. What was implemented.
+2. Files created or modified.
+3. The role of the important files.
+4. Tests added and their results.
+5. Commands executed and their results.
+6. Important design decisions, assumptions, or deviations from `design.md`.
+
+Do not create a separate report document unless explicitly requested.
+
+## Updates to project
+
+After implementing any user-visible feature or architectural change:
+
+- Update the project's `README.md` History section.
+- Add the date with a concise entry describing the change.
+- Use reverse chronological order (newest entry first).

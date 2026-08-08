@@ -8,7 +8,8 @@ from pathlib import Path
 
 from book_sorting.ai.description import DescriptionProvider, StubDescriptionProvider
 from book_sorting.metadata.nfo import load_description_from_directory, write_nfo_description
-from book_sorting.utilities.cover_images import cover_to_data_uri, find_cover_image
+from book_sorting.utilities.cover_images import resolve_cover_data_uri
+from book_sorting.utilities.goodreads_covers import CoverImageProvider
 from book_sorting.utilities.library_scan import (
     LibraryBook,
     authors_from_books,
@@ -49,7 +50,10 @@ def build_book_collection(
     *,
     fetch_descriptions: bool,
     update_nfo: bool,
+    fetch_covers_online: bool = True,
+    save_downloaded_covers: bool = True,
     description_provider: DescriptionProvider | None = None,
+    cover_provider: CoverImageProvider | None = None,
 ) -> BookCollection:
     """Scan a sorted library and enrich each book for HTML generation."""
     library_books = scan_output_library(output_root)
@@ -66,7 +70,10 @@ def build_book_collection(
                         book,
                         fetch_descriptions=fetch_descriptions,
                         update_nfo=update_nfo,
+                        fetch_covers_online=fetch_covers_online,
+                        save_downloaded_covers=save_downloaded_covers,
                         description_provider=provider,
+                        cover_provider=cover_provider,
                     ),
                 )
             except OSError as exc:
@@ -85,7 +92,10 @@ def _enrich_book(
     *,
     fetch_descriptions: bool,
     update_nfo: bool,
+    fetch_covers_online: bool,
+    save_downloaded_covers: bool,
     description_provider: DescriptionProvider,
+    cover_provider: CoverImageProvider | None,
 ) -> CollectionBook:
     media_label = format_media_label(media_kinds_in_book_folder(book.path))
     series = display_series_name(book.series)
@@ -96,8 +106,15 @@ def _enrich_book(
         update_nfo=update_nfo,
         description_provider=description_provider,
     )
-    cover_path = find_cover_image(book.path)
-    cover_data_uri = cover_to_data_uri(cover_path) if cover_path is not None else None
+    cover_data_uri = resolve_cover_data_uri(
+        book.path,
+        author=book.author,
+        title=book.title,
+        series=series,
+        fetch_online=fetch_covers_online,
+        save_downloaded=save_downloaded_covers,
+        cover_provider=cover_provider,
+    )
 
     return CollectionBook(
         author=book.author,

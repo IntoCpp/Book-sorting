@@ -7,6 +7,12 @@ import logging
 import mimetypes
 from pathlib import Path
 
+from book_sorting.utilities.goodreads_covers import (
+    CoverImageProvider,
+    GoodreadsCoverProvider,
+    fetch_image_bytes,
+)
+
 logger = logging.getLogger(__name__)
 
 _IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png"})
@@ -18,6 +24,7 @@ _PREFERRED_COVER_NAMES = (
     "folder.jpeg",
     "folder.png",
 )
+_DEFAULT_DOWNLOADED_COVER_NAME = "cover.jpg"
 _MAX_COVER_BYTES = 500_000
 
 
@@ -59,3 +66,59 @@ def cover_to_data_uri(path: Path) -> str | None:
         mime_type = "image/jpeg"
     encoded = base64.b64encode(data).decode("ascii")
     return f"data:{mime_type};base64,{encoded}"
+
+
+def bytes_to_data_uri(data: bytes, *, mime_type: str = "image/jpeg") -> str:
+    """Encode raw image bytes as a Base64 data URI."""
+    encoded = base64.b64encode(data).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def resolve_cover_data_uri(
+    book_dir: Path,
+    *,
+    author: str,
+    title: str,
+    series: str | None,
+    fetch_online: bool = True,
+    save_downloaded: bool = True,
+    cover_provider: CoverImageProvider | None = None,
+) -> str | None:
+    """Resolve a cover image as a data URI, optionally fetching from Goodreads."""
+    cover_path = find_cover_image(book_dir)
+    if cover_path is not None:
+        return cover_to_data_uri(cover_path)
+
+    if not fetch_online:
+        return None
+
+    provider = cover_provider or GoodreadsCoverProvider()
+    image_url = provider.fetch_cover_image_url(
+        author=author,
+        title=title,
+        series=series,
+    )
+    if not image_url:
+        return None
+
+    image_bytes = fetch_image_bytes(image_url)
+    if not image_bytes:
+        return None
+
+    if len(image_bytes) > _MAX_COVER_BYTES:
+        logger.warning(
+            "Skipping large downloaded cover (%s bytes) for %s",
+            len(image_bytes),
+            book_dir,
+        )
+        return None
+
+    if save_downloaded:
+        try:
+            destination = book_dir / _DEFAULT_DOWNLOADED_COVER_NAME
+            destination.write_bytes(image_bytes)
+            return cover_to_data_uri(destination)
+        except OSError as exc:
+            logger.warning("Could not save downloaded cover to %s: %s", book_dir, exc)
+
+    return bytes_to_data_uri(image_bytes)

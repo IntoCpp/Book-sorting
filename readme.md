@@ -156,6 +156,8 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-08-08** — `create-book-collection` prints effective CLI settings (including defaults) before generating the catalog.
+- **2026-08-07** — `create-book-collection` fetches missing cover images from Goodreads and caches them as `cover.jpg` in the output library (`--no-cover-fetch` to disable).
 - **2026-07-23** — Added `create-book-collection` utility to generate a self-contained HTML catalog (`my_books.html`) from the sorted output library.
 - **2026-07-23** — AI-assisted research caches retrieved metadata in output-library `.nfo` files after successful copy; the source folder is never modified.
 - **2026-07-22** — Added `book-information` utility to list authors and books from the production output folder.
