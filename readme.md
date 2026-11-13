@@ -18,6 +18,9 @@ Run the utility to create an HTML with all authors and books:
 Run the utility to list all authors and books:
 `> uv run book-information -ab`
 
+Check that source files are in the output library before bulk-deleting source:
+`> uv run verify-source-copies`
+
 
 ## Developing This Project with Cursor
 
@@ -156,6 +159,8 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-08-11** — `verify-source-copies` falls back to name/size in the output library when a history destination path is stale (e.g. after moving books in the target folder).
+- **2026-08-10** — Added `verify-source-copies` to compare source media against the production output library (history + name/size fallback) before deleting source files; writes `verify-source-report.txt` by default.
 - **2026-08-09** — Goodreads cover lookup uses browser-like HTTP headers, quieter DEBUG logging, and an end-of-run cover summary with separate 302 and 202 error counts.
 - **2026-08-08** — `create-book-collection` prints effective CLI settings (including defaults) before generating the catalog.
 - **2026-08-07** — `create-book-collection` fetches missing cover images from Goodreads and caches them as `cover.jpg` in the output library (`--no-cover-fetch` to disable).
