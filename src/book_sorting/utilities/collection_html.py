@@ -38,6 +38,7 @@ def render_book_collection_html(collection: BookCollection) -> str:
 {author_sections}
   </main>
   <script>
+{_PATH_COPY_SCRIPT}
 {_SORT_SCRIPT}
   </script>
 </body>
@@ -48,6 +49,11 @@ def render_book_collection_html(collection: BookCollection) -> str:
 def write_book_collection_html(collection: BookCollection, output_path: Path) -> None:
     """Write a fully regenerated HTML catalog to ``output_path``."""
     output_path.write_text(render_book_collection_html(collection), encoding="utf-8")
+
+
+def folder_path_for_display(path: Path) -> str:
+    """Return a native path string for clipboard (backslashes on Windows)."""
+    return str(path.resolve())
 
 
 def _render_author_section(author: str, books: list[CollectionBook]) -> str:
@@ -74,20 +80,21 @@ def _render_author_section(author: str, books: list[CollectionBook]) -> str:
 
 
 def _render_book_row(book: CollectionBook) -> str:
-    folder_uri = book.path.resolve().as_uri()
-    title_link = (
-        f'<a href="{html.escape(folder_uri, quote=True)}">{html.escape(book.title)}</a>'
-    )
+    folder_path = folder_path_for_display(book.path)
+    folder_path_attr = html.escape(folder_path, quote=True)
+    title_cell = f"""              <span class="book-title">{html.escape(book.title)}</span>
+              <div class="book-actions" data-folder-path="{folder_path_attr}">
+                <button type="button" class="btn-path btn-copy-path" onclick="copyBookPath(this)">Copy path</button>
+              </div>"""
     cover_cell = ""
     if book.cover_data_uri:
         cover_cell = (
-            f'<a href="{html.escape(folder_uri, quote=True)}">'
-            f'<img src="{book.cover_data_uri}" alt="{html.escape(book.title)} cover"></a>'
+            f'<img src="{book.cover_data_uri}" alt="{html.escape(book.title)} cover">'
         )
     description = html.escape(book.description).replace("\n", "<br>")
     return f"""            <tr>
               <td class="cover">{cover_cell}</td>
-              <td>{title_link}</td>
+              <td class="title-cell">{title_cell}</td>
               <td>{html.escape(book.series or "")}</td>
               <td>{html.escape(book.media_label)}</td>
               <td class="description">{description}</td>
@@ -178,6 +185,20 @@ _CSS = """
       border-radius: 4px;
       object-fit: cover;
     }
+    td.title-cell .book-title { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+    .book-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+    .btn-path {
+      font: inherit;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--row-alt);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .btn-path:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-path.copied { border-color: var(--accent); color: var(--accent); }
     td.description { max-width: 40rem; }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -187,7 +208,54 @@ _CSS = """
     }
 """
 
+_PATH_COPY_SCRIPT = """
+    function folderPathFromButton(button) {
+      const container = button.closest(".book-actions");
+      return container ? container.dataset.folderPath : "";
+    }
+
+    async function copyBookPath(button) {
+      const path = folderPathFromButton(button);
+      if (!path) return;
+      let copied = false;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(path);
+          copied = true;
+        } catch (err) {
+          copied = false;
+        }
+      }
+      if (!copied) {
+        const area = document.createElement("textarea");
+        area.value = path;
+        area.setAttribute("readonly", "");
+        area.style.position = "fixed";
+        area.style.left = "-9999px";
+        document.body.appendChild(area);
+        area.select();
+        copied = document.execCommand("copy");
+        document.body.removeChild(area);
+      }
+      if (copied) {
+        const label = button.textContent;
+        button.textContent = "Copied";
+        button.classList.add("copied");
+        window.setTimeout(() => {
+          button.textContent = label;
+          button.classList.remove("copied");
+        }, 1500);
+      }
+    }
+"""
+
 _SORT_SCRIPT = """
+    function sortKeyForCell(cell) {
+      const title = cell.querySelector(".book-title");
+      if (title) return title.textContent.trim().toLowerCase();
+      return cell.textContent.trim().toLowerCase();
+    }
+
     document.querySelectorAll("th.sortable").forEach((header) => {
       header.addEventListener("click", () => {
         const table = header.closest("table");
@@ -196,8 +264,8 @@ _SORT_SCRIPT = """
         const ascending = header.dataset.asc !== "true";
         const rows = Array.from(tbody.querySelectorAll("tr"));
         rows.sort((left, right) => {
-          const a = left.children[col].textContent.trim().toLowerCase();
-          const b = right.children[col].textContent.trim().toLowerCase();
+          const a = sortKeyForCell(left.children[col]);
+          const b = sortKeyForCell(right.children[col]);
           if (a < b) return ascending ? -1 : 1;
           if (a > b) return ascending ? 1 : -1;
           return 0;

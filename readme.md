@@ -159,6 +159,7 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-08-12** — HTML catalog: **Copy path** under each title (no `file://` links); paste the path into Explorer. Removed non-functional **Open folder** button (browsers cannot open Explorer from local HTML).
 - **2026-08-11** — `verify-source-copies` falls back to name/size in the output library when a history destination path is stale (e.g. after moving books in the target folder).
 - **2026-08-10** — Added `verify-source-copies` to compare source media against the production output library (history + name/size fallback) before deleting source files; writes `verify-source-report.txt` by default.
 - **2026-08-09** — Goodreads cover lookup uses browser-like HTTP headers, quieter DEBUG logging, and an end-of-run cover summary with separate 302 and 202 error counts.

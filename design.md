@@ -632,3 +632,12 @@ downstream utilities (for example, an HTML catalog generator).
 
 Source-side `.nfo` files may still be **read** as input metadata when present.
 They are never modified by this application.
+
+### 2026-08-12 — HTML catalog folder access
+
+The `create-book-collection` HTML catalog is intended for **local Windows** use.
+Book titles are **not** linked with raw `file://` URLs (poor paste into Explorer).
+
+Each row provides **Copy path** so the user can paste a native Windows path into
+File Explorer. Browsers cannot launch Explorer from static HTML (`file://` links
+only open a new tab). Cover images are not hyperlinked.

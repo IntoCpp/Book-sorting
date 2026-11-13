@@ -274,6 +274,13 @@ def test_render_book_collection_html_contains_expected_sections(tmp_path: Path) 
     assert "Existing series description." in html_text
     assert "Audio + E-book" in html_text
     assert "data:image/jpeg;base64," not in html_text
+    assert 'class="book-title"' in html_text
+    assert "data-folder-path=" in html_text
+    assert "Copy path" in html_text
+    assert "copyBookPath" in html_text
+    assert 'href="file:' not in html_text
+    assert "Open folder" not in html_text
+    assert "<td class=\"title-cell\">" in html_text
 
 
 def test_create_book_collection_cli_prints_settings(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
