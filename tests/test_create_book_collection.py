@@ -175,7 +175,7 @@ def test_resolve_cover_data_uri_fetches_and_saves_cover(
 
     monkeypatch.setattr(
         "book_sorting.utilities.cover_images.fetch_image_bytes",
-        lambda url: _MINIMAL_JPEG,
+        lambda url, stats=None: _MINIMAL_JPEG,
     )
 
     data_uri = resolve_cover_data_uri(

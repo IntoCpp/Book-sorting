@@ -8,6 +8,7 @@ from pathlib import Path
 
 from book_sorting.ai.description import DescriptionProvider, StubDescriptionProvider
 from book_sorting.metadata.nfo import load_description_from_directory, write_nfo_description
+from book_sorting.utilities.cover_fetch_stats import CoverFetchStats
 from book_sorting.utilities.cover_images import resolve_cover_data_uri
 from book_sorting.utilities.goodreads_covers import CoverImageProvider
 from book_sorting.utilities.library_scan import (
@@ -43,6 +44,7 @@ class BookCollection:
     authors: list[str]
     books_by_author: dict[str, list[CollectionBook]]
     total_books: int
+    cover_stats: CoverFetchStats | None = None
 
 
 def build_book_collection(
@@ -59,6 +61,7 @@ def build_book_collection(
     library_books = scan_output_library(output_root)
     authors = authors_from_books(library_books)
     provider = description_provider or StubDescriptionProvider()
+    cover_stats = CoverFetchStats() if fetch_covers_online else None
 
     books_by_author: dict[str, list[CollectionBook]] = {}
     for author in authors:
@@ -74,6 +77,7 @@ def build_book_collection(
                         save_downloaded_covers=save_downloaded_covers,
                         description_provider=provider,
                         cover_provider=cover_provider,
+                        cover_stats=cover_stats,
                     ),
                 )
             except OSError as exc:
@@ -84,6 +88,7 @@ def build_book_collection(
         authors=authors,
         books_by_author=books_by_author,
         total_books=len(library_books),
+        cover_stats=cover_stats,
     )
 
 
@@ -96,6 +101,7 @@ def _enrich_book(
     save_downloaded_covers: bool,
     description_provider: DescriptionProvider,
     cover_provider: CoverImageProvider | None,
+    cover_stats: CoverFetchStats | None,
 ) -> CollectionBook:
     media_label = format_media_label(media_kinds_in_book_folder(book.path))
     series = display_series_name(book.series)
@@ -114,6 +120,7 @@ def _enrich_book(
         fetch_online=fetch_covers_online,
         save_downloaded=save_downloaded_covers,
         cover_provider=cover_provider,
+        cover_stats=cover_stats,
     )
 
     return CollectionBook(

@@ -27,7 +27,7 @@ For details on this please check the file [done_with_Cursor.md](done_with_Cursor
 
 ## Configuration
 
-Input and output folders are set in a project YAML config file: `[config.yaml](./config.yaml)`.
+Input and output folders are set in a project YAML config file: [config.yaml](./config.yaml).
 
 Use `uv run book-sort --test` for test mode (`source_folder_test`, `output_folder_test`). Omit `--test` for production paths.
 
@@ -39,7 +39,7 @@ Use `uv run book-sort --test` for test mode (`source_folder_test`, `output_folde
 | Processing history | `processing_history_test` | `processing_history_prod` |
 
 
-Copy `[.env.example](./.env.example)` to `.env` and set your OpenAI API key. The application uses the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) as its AI runtime.
+Copy [.env.example](./.env.example) to `.env` and set your OpenAI API key. The application uses the [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/) as its AI runtime.
 
 ## Folder Structure
 
@@ -156,6 +156,7 @@ See the [Testing](./design.md#testing) section in [design.md](./design.md) for t
 
 ## History
 
+- **2026-08-09** — Goodreads cover lookup uses browser-like HTTP headers, quieter DEBUG logging, and an end-of-run cover summary with separate 302 and 202 error counts.
 - **2026-08-08** — `create-book-collection` prints effective CLI settings (including defaults) before generating the catalog.
 - **2026-08-07** — `create-book-collection` fetches missing cover images from Goodreads and caches them as `cover.jpg` in the output library (`--no-cover-fetch` to disable).
 - **2026-07-23** — Added `create-book-collection` utility to generate a self-contained HTML catalog (`my_books.html`) from the sorted output library.

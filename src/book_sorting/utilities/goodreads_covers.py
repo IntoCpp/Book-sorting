@@ -2,19 +2,26 @@
 
 from __future__ import annotations
 
+import http.cookiejar
 import logging
 import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
+
+from book_sorting.utilities.cover_fetch_stats import CoverFetchStats
 
 logger = logging.getLogger(__name__)
 
 _GOODREADS_BASE = "https://www.goodreads.com"
-_USER_AGENT = "Mozilla/5.0 (compatible; BookSortingTool/1.0)"
 _REQUEST_TIMEOUT_SECONDS = 30.0
+_BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
 
 _OG_IMAGE_PATTERN = re.compile(
     r'<meta property="og:image" content="([^"]+)"',
@@ -38,6 +45,7 @@ _SERIES_BOOK_IMAGE_ALT_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 _ORDER_PREFIX_PATTERN = re.compile(r"^\d+\s*-\s*(.+)$")
+_WAF_BODY_MARKERS = ("awsWafCookieDomainList", "gokuProps", "awswaf")
 
 
 class CoverImageProvider(Protocol):
@@ -54,9 +62,107 @@ class CoverImageProvider(Protocol):
         ...
 
 
-@dataclass(frozen=True)
+def _browser_request_headers(*, referer: str | None = None) -> dict[str, str]:
+    headers = {
+        "User-Agent": _BROWSER_USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+    }
+    if referer:
+        headers["Referer"] = referer
+    return headers
+
+
+def _build_goodreads_opener() -> urllib.request.OpenerDirector:
+    cookie_jar = http.cookiejar.CookieJar()
+    handlers: list[urllib.request.BaseHandler] = [
+        urllib.request.HTTPCookieProcessor(cookie_jar),
+        urllib.request.HTTPRedirectHandler(),
+    ]
+    return urllib.request.build_opener(*handlers)
+
+
+def _is_redirect_loop_error(exc: BaseException) -> bool:
+    return "infinite loop" in str(exc).casefold()
+
+
+def _is_blocked_goodreads_response(status: int, body: bytes) -> bool:
+    if status == 202:
+        return True
+    if not body.strip():
+        return True
+    text = body.decode("utf-8", errors="replace").casefold()
+    if any(marker in text for marker in _WAF_BODY_MARKERS):
+        if "/book/show/" not in text and 'property="og:image"' not in text:
+            return True
+    return False
+
+
+def _default_fetch_text(url: str, *, stats: CoverFetchStats | None) -> str:
+    opener = _build_goodreads_opener()
+    referer = _GOODREADS_BASE if url.startswith(_GOODREADS_BASE) else None
+    request = urllib.request.Request(url, headers=_browser_request_headers(referer=referer))
+    try:
+        response = opener.open(request, timeout=_REQUEST_TIMEOUT_SECONDS)
+    except urllib.error.HTTPError as exc:
+        if _is_redirect_loop_error(exc):
+            if stats is not None:
+                stats.record_redirect_loop_error()
+            logger.debug("Goodreads redirect loop for %s: %s", url, exc)
+        else:
+            if stats is not None:
+                stats.record_other_error()
+            logger.debug("Goodreads HTTP error for %s: %s", url, exc)
+        raise
+    except urllib.error.URLError as exc:
+        if _is_redirect_loop_error(exc):
+            if stats is not None:
+                stats.record_redirect_loop_error()
+            logger.debug("Goodreads redirect loop for %s: %s", url, exc)
+        else:
+            if stats is not None:
+                stats.record_other_error()
+            logger.debug("Goodreads URL error for %s: %s", url, exc)
+        raise
+
+    try:
+        status = response.status
+        body = response.read()
+    finally:
+        response.close()
+
+    if _is_blocked_goodreads_response(status, body):
+        if stats is not None:
+            stats.record_blocked_202_error()
+        logger.debug(
+            "Goodreads blocked or empty response for %s (HTTP %s, %s bytes)",
+            url,
+            status,
+            len(body),
+        )
+        raise GoodreadsBlockedResponseError(status)
+
+    return body.decode("utf-8", errors="replace")
+
+
+class GoodreadsBlockedResponseError(Exception):
+    """Raised when Goodreads returns a bot challenge or empty payload."""
+
+    def __init__(self, status: int) -> None:
+        self.status = status
+        super().__init__(f"Goodreads returned blocked or empty HTTP {status}")
+
+
+TextFetcher = Callable[[str], str]
+
+
+@dataclass
 class GoodreadsCoverProvider:
     """Look up cover art on Goodreads using series and book search pages."""
+
+    text_fetcher: TextFetcher | None = None
+    fetch_stats: CoverFetchStats | None = None
 
     def fetch_cover_image_url(
         self,
@@ -66,15 +172,40 @@ class GoodreadsCoverProvider:
         series: str | None,
     ) -> str | None:
         search_title = clean_title_for_search(title)
+        lookup_stats = CoverFetchStats()
+        stats = self.fetch_stats
+
+        def fetch_text(url: str) -> str:
+            if self.text_fetcher is not None:
+                return self.text_fetcher(url)
+            return _default_fetch_text(url, stats=lookup_stats)
+
         try:
             if series:
-                image_url = self._fetch_from_series(series, author, search_title)
+                try:
+                    image_url = self._fetch_from_series(
+                        series,
+                        author,
+                        search_title,
+                        title,
+                        fetch_text=fetch_text,
+                    )
+                except GoodreadsBlockedResponseError:
+                    image_url = None
                 if image_url:
                     return image_url
 
-            return self._fetch_from_book_search(author, search_title)
-        except urllib.error.URLError as exc:
-            logger.warning(
+            return self._fetch_from_book_search(author, search_title, fetch_text=fetch_text)
+        except GoodreadsBlockedResponseError as exc:
+            logger.debug(
+                "Goodreads cover lookup blocked for %s / %s: %s",
+                author,
+                title,
+                exc,
+            )
+            return None
+        except (urllib.error.URLError, urllib.error.HTTPError, OSError) as exc:
+            logger.debug(
                 "Goodreads cover lookup failed for %s / %s: %s",
                 author,
                 title,
@@ -82,19 +213,26 @@ class GoodreadsCoverProvider:
             )
             return None
         except Exception as exc:
-            logger.warning(
+            lookup_stats.record_other_error()
+            logger.debug(
                 "Goodreads cover lookup failed for %s / %s: %s",
                 author,
                 title,
                 exc,
             )
             return None
+        finally:
+            if stats is not None:
+                stats.merge_goodreads_errors(lookup_stats)
 
     def _fetch_from_series(
         self,
         series: str,
         author: str,
         search_title: str,
+        original_title: str,
+        *,
+        fetch_text: TextFetcher,
     ) -> str | None:
         query = urllib.parse.urlencode(
             {
@@ -104,25 +242,31 @@ class GoodreadsCoverProvider:
                 "tab": "series",
             },
         )
-        search_html = _fetch_text(f"{_GOODREADS_BASE}/search?{query}")
+        search_html = fetch_text(f"{_GOODREADS_BASE}/search?{query}")
         series_match = _SERIES_LINK_PATTERN.search(search_html)
         if series_match is None:
             return None
 
-        series_html = _fetch_text(series_match.group(1))
+        series_html = fetch_text(series_match.group(1))
         title_map = _parse_series_page_images(series_html)
-        return _match_title_to_image(search_title, title, title_map)
+        return _match_title_to_image(search_title, original_title, title_map)
 
-    def _fetch_from_book_search(self, author: str, search_title: str) -> str | None:
+    def _fetch_from_book_search(
+        self,
+        author: str,
+        search_title: str,
+        *,
+        fetch_text: TextFetcher,
+    ) -> str | None:
         query = urllib.parse.urlencode({"q": f"{search_title} {author}"})
-        search_html = _fetch_text(f"{_GOODREADS_BASE}/search?{query}")
+        search_html = fetch_text(f"{_GOODREADS_BASE}/search?{query}")
         candidates = _parse_search_book_links(search_html)
         book_path = _best_matching_book_path(search_title, candidates)
         if book_path is None:
             return None
 
         book_url = f"{_GOODREADS_BASE}{book_path.split('&')[0]}"
-        book_html = _fetch_text(book_url)
+        book_html = fetch_text(book_url)
         return _extract_og_image(book_html)
 
 
@@ -135,20 +279,29 @@ def clean_title_for_search(title: str) -> str:
 
 
 def _fetch_text(url: str) -> str:
-    request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
-    with urllib.request.urlopen(request, timeout=_REQUEST_TIMEOUT_SECONDS) as response:
-        return response.read().decode("utf-8", errors="replace")
+    """Fetch HTML from Goodreads (legacy entry point for tests and direct use)."""
+    return _default_fetch_text(url, stats=None)
 
 
-def fetch_image_bytes(url: str) -> bytes | None:
+def fetch_image_bytes(
+    url: str,
+    *,
+    stats: CoverFetchStats | None = None,
+) -> bytes | None:
     """Download image bytes from a remote URL."""
+    opener = _build_goodreads_opener()
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
-        with urllib.request.urlopen(request, timeout=_REQUEST_TIMEOUT_SECONDS) as response:
+        request = urllib.request.Request(url, headers=_browser_request_headers())
+        with opener.open(request, timeout=_REQUEST_TIMEOUT_SECONDS) as response:
             data = response.read()
         return data if data else None
-    except (urllib.error.URLError, OSError) as exc:
-        logger.warning("Could not download cover image from %s: %s", url, exc)
+    except (urllib.error.URLError, urllib.error.HTTPError, OSError) as exc:
+        if stats is not None:
+            if _is_redirect_loop_error(exc):
+                stats.record_redirect_loop_error()
+            else:
+                stats.record_other_error()
+        logger.debug("Could not download cover image from %s: %s", url, exc)
         return None
 
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from book_sorting.ai.description import OpenAIDescriptionProvider, StubDescriptionProvider
 from book_sorting.config import get_openai_api_key
 from book_sorting.utilities.collection_data import build_book_collection
+from book_sorting.utilities.cover_fetch_stats import log_cover_fetch_summary
 from book_sorting.utilities.collection_html import write_book_collection_html
 
 _DEFAULT_OUTPUT = "my_books.html"
@@ -182,6 +183,12 @@ def main(argv: list[str] | None = None) -> None:
         description_provider=description_provider,
     )
     write_book_collection_html(collection, output_path)
+
+    if collection.cover_stats is not None:
+        log_cover_fetch_summary(
+            collection.cover_stats,
+            fetch_covers_online=not args.no_cover_fetch,
+        )
 
     logging.info("Wrote %s", output_path)
     logging.info(
